@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: tutorial
+Version: 0.0.0
+Requires-Dist: pyramid
+Requires-Dist: waitress
+Provides-Extra: dev
+Requires-Dist: pyramid_debugtoolbar; extra == "dev"
+Dynamic: provides-extra
+Dynamic: requires-dist

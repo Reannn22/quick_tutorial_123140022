@@ -14,27 +14,27 @@ Before diving into the tutorial sections, please ensure you have read and comple
 
 # Tutorial Sections Analysis
 
-1. [Single-File Web Applications](./01_single_file_web_applications.md#01-single-file-web-applications-analysis)
-2. [Python Packages](./02_python_packages.md#02-python-packages-analysis)
-3. [Application Configuration](./03_application_config.md#03-application-configuration-analysis)
-4. [Development with debugtoolbar](./04_debug_toolbar.md#04-debug-toolbar-analysis)
-5. [Unit Tests and pytest](./05_unit_tests.md#05-unit-tests-and-pytest-analysis)
-6. [Functional Testing](./06_functional_tests.md#06-functional-testing-analysis)
-7. [Basic Web Handling](./07_basic_web_handling.md#07-basic-web-handling-analysis)
-8. [HTML Generation With Templating](./08_templating.md#08-html-generation-with-templating-analysis)
-9. [View Classes](./09_view_classes.md#09-view-classes-analysis)
-10. [Web Requests and Responses](./10_requests_responses.md#10-web-requests-and-responses-analysis)
-11. [URL Routing](./11_routing.md#11-url-routing-analysis)
-12. [Jinja2 Templating](./12_jinja2.md#12-jinja2-templating-analysis)
-13. [Static Assets](./13_static_assets.md#13-static-assets-analysis)
-14. [AJAX Development](./14_ajax_json.md#14-ajax-development-analysis)
-15. [Advanced View Classes](./15_advanced_views.md#15-advanced-view-classes-analysis)
-16. [Logging](./16_logging.md#16-logging-analysis)
-17. [Sessions](./17_sessions.md#17-sessions-analysis)
-18. [Forms and Validation](./18_forms.md#18-forms-and-validation-analysis)
-19. [SQLAlchemy Databases](./19_databases.md#19-sqlalchemy-databases-analysis)
-20. [Authentication](./20_authentication.md#20-authentication-analysis)
-21. [Authorization](./21_authorization.md#21-authorization-analysis)
+1. [Single-File Web Applications](#01-single-file-web-applications-analysis)
+2. [Python Packages](#02-python-packages-analysis)
+3. [Application Configuration](#03-application-configuration-analysis)
+4. [Development with debugtoolbar](#04-debug-toolbar-analysis)
+5. [Unit Tests and pytest](#05-unit-tests-and-pytest-analysis)
+6. [Functional Testing](#06-functional-testing-analysis)
+7. [Basic Web Handling](#07-basic-web-handling-analysis)
+8. [HTML Generation With Templating](#08-html-generation-with-templating-analysis)
+9. [View Classes](#09-view-classes-analysis)
+10. [Web Requests and Responses](#10-web-requests-and-responses-analysis)
+11. [URL Routing](#11-url-routing-analysis)
+12. [Jinja2 Templating](#12-jinja2-templating-analysis)
+13. [Static Assets](#13-static-assets-analysis)
+14. [AJAX Development](#14-ajax-development-analysis)
+15. [Advanced View Classes](#15-advanced-view-classes-analysis)
+16. [Logging](#16-logging-analysis)
+17. [Sessions](#17-sessions-analysis)
+18. [Forms and Validation](#18-forms-and-validation-analysis)
+19. [SQLAlchemy Databases](#19-sqlalchemy-databases-analysis)
+20. [Authentication](#20-authentication-analysis)
+21. [Authorization](#21-authorization-analysis)
 
 ---
 
@@ -1277,15 +1277,957 @@ If toolbar causes issues:
 
 # 05: Unit Tests and pytest Analysis
 
-(Coming Soon)
+## Background Summary
+Testing is fundamental to software quality - "Untested code is broken code." Pyramid has maintained a commitment to testing with 100% test coverage from its earliest releases. While Python includes unittest in its standard library, the Pyramid community prefers pytest for its enhanced functionality and convenience. This tutorial introduces unit testing without being pedantic about test-driven development (TDD), focusing on practical testing to catch major issues during development.
 
 ## Key Components Analysis
 
-### 1. Test Structure
-(To be filled)
+### 1. Adding pytest as Development Dependency
+**Updated setup.py:**
 
-### 2. pytest Framework
-(To be filled)
+```python
+from setuptools import setup
+
+requires = [
+    'pyramid',
+    'waitress',
+]
+
+dev_requires = [
+    'pyramid_debugtoolbar',
+    'pytest',  # ← New addition
+]
+
+setup(
+    name='tutorial',
+    install_requires=requires,
+    extras_require={
+        'dev': dev_requires,
+    },
+    entry_points={
+        'paste.app_factory': [
+            'main = tutorial:main'
+        ],
+    },
+)
+```
+
+**Why pytest in dev_requires:**
+- Testing is a development-time activity
+- Not needed in production deployments
+- Keeps production environment lean
+- Part of the development workflow
+
+**Installation Command:**
+```bash
+$VENV/bin/pip install -e ".[dev]"
+```
+
+This installs:
+- All `requires` packages (pyramid, waitress)
+- All `dev_requires` packages (pyramid_debugtoolbar, pytest)
+- The tutorial package in editable mode
+
+### 2. Test File Structure (tutorial/tests.py)
+```python
+import unittest
+from pyramid import testing
+
+class TutorialViewTests(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+
+    def tearDown(self):
+        testing.tearDown()
+
+    def test_hello_world(self):
+        from tutorial import hello_world
+
+        request = testing.DummyRequest()
+        response = hello_world(request)
+        self.assertEqual(response.status_code, 200)
+```
+
+**Code Breakdown:**
+
+**Imports:**
+```python
+import unittest  # Python's standard testing framework
+from pyramid import testing  # Pyramid's testing helpers
+```
+
+**Test Class:**
+```python
+class TutorialViewTests(unittest.TestCase):
+    # Inherits from unittest.TestCase
+    # Groups related tests together
+    # Provides assertion methods
+```
+
+**setUp Method:**
+```python
+def setUp(self):
+    self.config = testing.setUp()
+```
+- Called before each test method
+- Creates fresh test configuration
+- Isolates tests from each other
+- `self.config` is a Configurator instance
+
+**tearDown Method:**
+```python
+def tearDown(self):
+    testing.tearDown()
+```
+- Called after each test method
+- Cleans up test configuration
+- Ensures no state leaks between tests
+- Important for test isolation
+
+### 3. The test_hello_world Test Method
+```python
+def test_hello_world(self):
+    from tutorial import hello_world
+
+    request = testing.DummyRequest()
+    response = hello_world(request)
+    self.assertEqual(response.status_code, 200)
+```
+
+**Step-by-Step Analysis:**
+
+**1. Import Inside Test:**
+```python
+from tutorial import hello_world
+```
+- Why not at module level?
+- Avoids import side effects
+- Maintains test isolation
+- Each test gets clean imports
+- Follows unit testing best practice
+
+**2. Create Mock Request:**
+```python
+request = testing.DummyRequest()
+```
+- DummyRequest is a fake HTTP request
+- Has all required request attributes
+- Lightweight - no real HTTP involved
+- Customizable for test scenarios
+
+**3. Call the View:**
+```python
+response = hello_world(request)
+```
+- Calls view function directly
+- No HTTP server needed
+- Fast execution
+- Returns Response object
+
+**4. Assert Expected Behavior:**
+```python
+self.assertEqual(response.status_code, 200)
+```
+- Verifies HTTP status code is 200 (OK)
+- Tests the "contract" of the view
+- Confirms view works as expected
+- Fails if view behavior changes
+
+### 4. Running Tests with pytest
+**Command:**
+```bash
+$VENV/bin/pytest tutorial/tests.py -q
+```
+
+**Output:**
+```
+.
+1 passed in 0.14 seconds
+```
+
+**Command Flags:**
+- `pytest`: The test runner
+- `tutorial/tests.py`: Test file to run
+- `-q`: Quiet mode (less verbose output)
+
+**Output Explanation:**
+- `.`: One dot per passing test
+- `1 passed`: Number of successful tests
+- `in 0.14 seconds`: Execution time
+
+### 5. pytest vs unittest
+
+**Why Use pytest?**
+
+**Feature Comparison:**
+```python
+# unittest style
+class TestSomething(unittest.TestCase):
+    def test_example(self):
+        self.assertEqual(result, expected)
+
+# pytest style (also supported)
+def test_example():
+    assert result == expected
+```
+
+**pytest Advantages:**
+- Runs unittest tests without modification
+- Simple assert statements (vs self.assertEqual)
+- Better test discovery
+- Rich failure reporting
+- Fixtures for test setup
+- Plugins ecosystem
+- Parametrized testing
+- Less boilerplate code
+
+**Test Discovery:**
+```bash
+# pytest finds tests automatically
+pytest                          # All tests in project
+pytest tutorial/                # All tests in directory
+pytest tutorial/tests.py        # Specific file
+pytest -k hello                 # Tests matching pattern
+```
+
+**Better Failure Output:**
+```
+# unittest
+F
+======================================================================
+FAIL: test_hello_world (tutorial.tests.TutorialViewTests)
+----------------------------------------------------------------------
+AssertionError: 404 != 200
+
+# pytest
+    def test_hello_world(self):
+        from tutorial import hello_world
+        request = testing.DummyRequest()
+        response = hello_world(request)
+>       self.assertEqual(response.status_code, 200)
+E       AssertionError: 404 != 200
+E       Expected: 200
+E       Actual: 404
+```
+
+## Pyramid Testing Helpers
+
+### 1. testing.setUp()
+```python
+config = testing.setUp()
+```
+
+**What it does:**
+- Creates a new Configurator instance
+- Provides isolated test configuration
+- Allows adding test-specific routes/views
+- Returns the config object
+
+**Usage:**
+```python
+def setUp(self):
+    self.config = testing.setUp()
+    # Can add test-specific configuration:
+    # self.config.add_route('test_route', '/test')
+```
+
+### 2. testing.tearDown()
+```python
+testing.tearDown()
+```
+
+**What it does:**
+- Cleans up configuration created by setUp()
+- Resets global Pyramid state
+- Ensures test isolation
+- Prevents test interference
+
+**Usage:**
+```python
+def tearDown(self):
+    testing.tearDown()
+```
+
+### 3. testing.DummyRequest()
+```python
+request = testing.DummyRequest()
+```
+
+**What it provides:**
+- Fake HTTP request object
+- Has all standard request attributes
+- Customizable for test scenarios
+- No web server required
+
+**Customization Examples:**
+```python
+# Basic request
+request = testing.DummyRequest()
+
+# With params
+request = testing.DummyRequest(params={'name': 'value'})
+
+# With POST data
+request = testing.DummyRequest(post={'field': 'data'})
+
+# With matched route
+request = testing.DummyRequest()
+request.matched_route = DummyRoute('route_name')
+
+# With custom attributes
+request = testing.DummyRequest()
+request.user = MockUser()
+```
+
+### 4. When setUp/tearDown Are Actually Needed
+
+**Current Example:**
+```python
+def setUp(self):
+    self.config = testing.setUp()  # Created but not used
+
+def tearDown(self):
+    testing.tearDown()
+
+def test_hello_world(self):
+    # Doesn't use self.config
+    from tutorial import hello_world
+    request = testing.DummyRequest()
+    response = hello_world(request)
+```
+
+**Note from tutorial:** "Our use of pyramid.testing.setUp() and pyramid.testing.tearDown() aren't actually necessary here."
+
+**When They ARE Necessary:**
+```python
+def setUp(self):
+    self.config = testing.setUp()
+    # Adding configuration that view needs
+    self.config.add_route('user', '/users/{id}')
+    self.config.add_settings({'db.url': 'sqlite:///:memory:'})
+
+def test_view_needs_config(self):
+    from tutorial import user_view
+    
+    request = testing.DummyRequest()
+    request.matched_route = DummyRoute('user', '/users/123')
+    
+    # View uses config to look up settings or routes
+    response = user_view(request)
+    self.assertEqual(response.status_code, 200)
+```
+
+## Unit Testing Principles
+
+### 1. Test Isolation (Units)
+```python
+from tutorial import hello_world  # ✅ Import inside test
+
+# vs.
+
+from tutorial import hello_world  # ❌ Import at module level
+```
+
+**Why import inside tests?**
+- Prevents import side effects from affecting other tests
+- Each test gets clean module state
+- Avoids hidden dependencies
+- True unit testing isolation
+
+**Example of Import Side Effects:**
+```python
+# module.py
+print("Module loaded!")  # Side effect
+counter = 0
+
+def increment():
+    global counter
+    counter += 1
+    return counter
+
+# If imported at module level:
+# - "Module loaded!" runs once
+# - counter is shared between tests
+# - Tests interfere with each other
+
+# If imported inside each test:
+# - Each test gets fresh module
+# - No shared state
+# - True isolation
+```
+
+### 2. Testing the Contract
+```python
+self.assertEqual(response.status_code, 200)
+```
+
+**What is a "contract"?**
+- The view promises to return HTTP 200 on success
+- The test verifies this promise
+- If view behavior changes, test catches it
+- Documents expected behavior
+
+**Example Contract Tests:**
+```python
+def test_hello_world(self):
+    # Contract: Returns 200 status
+    response = hello_world(request)
+    self.assertEqual(response.status_code, 200)
+    
+    # Contract: Returns HTML
+    self.assertIn('text/html', response.content_type)
+    
+    # Contract: Contains specific content
+    self.assertIn(b'Hello World', response.body)
+```
+
+### 3. Fast Feedback Loop
+
+**Traditional Development:**
+```
+1. Write code
+2. Switch to browser
+3. Refresh page
+4. Check if it works
+5. Switch back to editor
+6. Repeat
+```
+
+**With Tests:**
+```
+1. Write code
+2. Run pytest
+3. See results immediately
+4. Fix issues
+5. Repeat
+```
+
+**Benefits:**
+- No context switching
+- Faster iterations
+- Catch bugs immediately
+- No manual clicking
+- Automated verification
+
+## Running Tests - Various Options
+
+**Basic Commands:**
+```bash
+# Run all tests in file
+$VENV/bin/pytest tutorial/tests.py
+
+# Quiet mode (less output)
+$VENV/bin/pytest tutorial/tests.py -q
+
+# Verbose mode (more details)
+$VENV/bin/pytest tutorial/tests.py -v
+
+# Very verbose (shows all test names)
+$VENV/bin/pytest tutorial/tests.py -vv
+```
+
+**Discovery:**
+```bash
+# Run all tests in project
+$VENV/bin/pytest
+
+# Run tests in directory
+$VENV/bin/pytest tutorial/
+
+# Run specific test class
+$VENV/bin/pytest tutorial/tests.py::TutorialViewTests
+
+# Run specific test method
+$VENV/bin/pytest tutorial/tests.py::TutorialViewTests::test_hello_world
+```
+
+**Filtering:**
+```bash
+# Run tests matching pattern
+$VENV/bin/pytest -k hello
+
+# Run tests NOT matching pattern
+$VENV/bin/pytest -k "not slow"
+```
+
+**Output Control:**
+```bash
+# Show print statements
+$VENV/bin/pytest -s
+
+# Show local variables on failure
+$VENV/bin/pytest -l
+
+# Stop after first failure
+$VENV/bin/pytest -x
+
+# Stop after N failures
+$VENV/bin/pytest --maxfail=3
+```
+
+## Extra Credit Answers
+
+### 1. Change test to assert status 404 and read error report
+
+**Modified Test:**
+```python
+def test_hello_world(self):
+    from tutorial import hello_world
+    
+    request = testing.DummyRequest()
+    response = hello_world(request)
+    self.assertEqual(response.status_code, 404)  # Changed to 404
+```
+
+**Running pytest:**
+```bash
+$VENV/bin/pytest tutorial/tests.py -q
+```
+
+**Output:**
+```
+F
+======================================================================
+FAIL: test_hello_world (tutorial.tests.TutorialViewTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File ".../tutorial/tests.py", line 14, in test_hello_world
+    self.assertEqual(response.status_code, 404)
+AssertionError: 200 != 404
+
+----------------------------------------------------------------------
+Ran 1 test in 0.02s
+
+FAILED (failures=1)
+```
+
+**Understanding the Output:**
+- `F`: Test failed (instead of `.`)
+- `FAIL: test_hello_world`: Which test failed
+- `Traceback`: Shows exactly where it failed
+- `AssertionError: 200 != 404`: Expected 404, got 200
+- **Key insight**: Test correctly caught that our view returns 200, not 404
+
+**What It Tells Us:**
+- Test location: `tutorial/tests.py`, line 14
+- What was tested: `response.status_code`
+- Expected value: 404
+- Actual value: 200
+- The test works! It caught the mismatch
+
+### 2. Introduce error in view and see convenience
+
+**Buggy View Code:**
+```python
+def hello_world(request):
+    undefined_variable = some_nonexistent_var  # ❌ Error
+    return Response('<body><h1>Hello World!</h1></body>')
+```
+
+**Run Tests:**
+```bash
+$VENV/bin/pytest tutorial/tests.py -q
+```
+
+**Output:**
+```
+E
+======================================================================
+ERROR: test_hello_world (tutorial.tests.TutorialViewTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File ".../tutorial/tests.py", line 13, in test_hello_world
+    response = hello_world(request)
+  File ".../tutorial/__init__.py", line 6, in hello_world
+    undefined_variable = some_nonexistent_var
+NameError: name 'some_nonexistent_var' is not defined
+
+----------------------------------------------------------------------
+Ran 1 test in 0.02s
+
+FAILED (errors=1)
+```
+
+**Convenience Benefits:**
+- ✅ **Immediate feedback**: See error instantly, no browser needed
+- ✅ **Clear traceback**: Shows exact line causing error
+- ✅ **Fast iteration**: Fix and re-run in seconds
+- ✅ **No manual testing**: Automated check every time
+- ✅ **Regression prevention**: Error won't sneak back in
+
+**Comparison to Manual Testing:**
+
+**Manual Testing:**
+```
+1. Save code
+2. Switch to browser
+3. Refresh page
+4. See error (maybe)
+5. Switch back to code
+6. Find the line
+7. Fix it
+8. Repeat
+Time: ~30-60 seconds per iteration
+```
+
+**Automated Testing:**
+```
+1. Run pytest
+2. See exact error location
+3. Fix it
+4. Run pytest again
+Time: ~5-10 seconds per iteration
+```
+
+### 3. Test Response code change
+
+**Understanding Response Objects:**
+```python
+from pyramid.response import Response
+
+# Default status is 200
+response = Response('Hello')
+response.status_code  # 200
+
+# Can set different status codes
+response = Response('Not Found', status=404)
+response.status_code  # 404
+
+# Or modify after creation
+response = Response('Hello')
+response.status_code = 201  # Created
+response.status = '201 Created'  # Alternative way
+```
+
+**Modified View:**
+```python
+def hello_world(request):
+    response = Response('<body><h1>Hello World!</h1></body>')
+    response.status_code = 404  # Change status to 404
+    return response
+```
+
+**Run Original Test:**
+```bash
+$VENV/bin/pytest tutorial/tests.py -q
+```
+
+**Output:**
+```
+F
+AssertionError: 404 != 200
+```
+
+**Contract Broken:**
+- Original contract: View returns 200 (success)
+- New behavior: View returns 404 (not found)
+- Test correctly fails
+- This is the test doing its job!
+
+**Fix the Test to Match New Contract:**
+```python
+def test_hello_world(self):
+    from tutorial import hello_world
+    
+    request = testing.DummyRequest()
+    response = hello_world(request)
+    self.assertEqual(response.status_code, 404)  # Updated expectation
+```
+
+**Now Test Passes:**
+```bash
+$VENV/bin/pytest tutorial/tests.py -q
+```
+```
+.
+1 passed in 0.02s
+```
+
+**Key Lesson:**
+- Tests document expected behavior (the "contract")
+- When behavior changes intentionally, update tests
+- When behavior changes unintentionally, tests catch bugs
+- Tests are living documentation of your code
+
+### 4. How to test HTML response body?
+
+**Multiple Approaches:**
+
+**Approach 1: Test Response Body (bytes):**
+```python
+def test_hello_world_body(self):
+    from tutorial import hello_world
+    
+    request = testing.DummyRequest()
+    response = hello_world(request)
+    
+    # response.body is bytes
+    self.assertIn(b'<h1>Hello World!</h1>', response.body)
+    self.assertIn(b'<body>', response.body)
+```
+
+**Approach 2: Test Response Text (string):**
+```python
+def test_hello_world_text(self):
+    from tutorial import hello_world
+    
+    request = testing.DummyRequest()
+    response = hello_world(request)
+    
+    # response.text is string
+    self.assertIn('Hello World!', response.text)
+    self.assertIn('<h1>', response.text)
+```
+
+**Approach 3: More Specific Assertions:**
+```python
+def test_hello_world_content(self):
+    from tutorial import hello_world
+    
+    request = testing.DummyRequest()
+    response = hello_world(request)
+    
+    # Test status
+    self.assertEqual(response.status_code, 200)
+    
+    # Test content type
+    self.assertIn('text/html', response.content_type)
+    
+    # Test specific content
+    self.assertIn(b'Hello World!', response.body)
+    
+    # Test HTML structure
+    self.assertTrue(response.body.startswith(b'<body>'))
+    self.assertTrue(response.body.endswith(b'</body>'))
+```
+
+**Approach 4: Using lxml for HTML Parsing (advanced):**
+```python
+def test_hello_world_html_structure(self):
+    from tutorial import hello_world
+    from lxml import html
+    
+    request = testing.DummyRequest()
+    response = hello_world(request)
+    
+    # Parse HTML
+    tree = html.fromstring(response.body)
+    
+    # Test using XPath or CSS selectors
+    h1_elements = tree.xpath('//h1')
+    self.assertEqual(len(h1_elements), 1)
+    self.assertEqual(h1_elements[0].text, 'Hello World!')
+```
+
+**Approach 5: Using WebTest (functional testing):**
+```python
+from webtest import TestApp
+
+def test_hello_world_functional(self):
+    from tutorial import main
+    
+    app = TestApp(main({}, **settings))
+    response = app.get('/', status=200)
+    
+    # WebTest provides convenient methods
+    response.mustcontain('Hello World!')
+    response.mustcontain('<h1>', '</h1>')
+```
+
+**Best Practices for Testing HTML:**
+- ✅ Test semantic content, not exact HTML
+- ✅ Test that important elements exist
+- ✅ Don't test whitespace or formatting
+- ✅ Use contains checks rather than equality
+- ✅ Consider CSS selectors for complex pages
+
+**Example - Good vs Bad:**
+```python
+# ❌ BAD: Too brittle
+expected = '<body><h1>Hello World!</h1></body>'
+self.assertEqual(response.body.decode(), expected)
+# Breaks if you add whitespace, classes, etc.
+
+# ✅ GOOD: Tests what matters
+self.assertIn('Hello World!', response.text)
+self.assertEqual(response.status_code, 200)
+# Focuses on content and behavior, not exact formatting
+```
+
+### 5. Why import view inside test method?
+
+**Detailed Explanation:**
+
+**The Problem with Top-Level Imports:**
+```python
+# tests.py - BAD PRACTICE
+from tutorial import hello_world  # ← Import at module level
+
+class TutorialViewTests(unittest.TestCase):
+    def test_hello_world(self):
+        request = testing.DummyRequest()
+        response = hello_world(request)  # Uses already-imported function
+        self.assertEqual(response.status_code, 200)
+    
+    def test_hello_world_again(self):
+        # Still using the SAME imported function
+        # If first test modified module state, this test sees it
+        pass
+```
+
+**Issues:**
+- Module imported once when tests.py loads
+- All tests share the same module instance
+- Module-level code runs only once
+- State can leak between tests
+- Import side effects affect all tests
+
+**The Solution - Import Inside Tests:**
+```python
+# tests.py - GOOD PRACTICE
+class TutorialViewTests(unittest.TestCase):
+    def test_hello_world(self):
+        from tutorial import hello_world  # ← Fresh import
+        request = testing.DummyRequest()
+        response = hello_world(request)
+        self.assertEqual(response.status_code, 200)
+    
+    def test_hello_world_again(self):
+        from tutorial import hello_world  # ← Another fresh import
+        # Gets clean module state
+        pass
+```
+
+**Benefits:**
+- Each test can get fresh module
+- Reduces coupling between tests
+- Prevents state leakage
+- True unit test isolation
+- Easier to test import errors
+
+**Real-World Example:**
+```python
+# tutorial/__init__.py
+import os
+
+# This runs at import time
+DATABASE_URL = os.getenv('DATABASE_URL', 'default.db')
+connection = connect_to_database(DATABASE_URL)
+
+def hello_world(request):
+    # Uses the module-level connection
+    return Response('Hello')
+
+# tests.py - Top-level import
+from tutorial import hello_world  # Connection created NOW
+
+class TestCase1(unittest.TestCase):
+    def test_one(self):
+        # Uses connection from import time
+        pass
+
+class TestCase2(unittest.TestCase):
+    def test_two(self):
+        # Still uses SAME connection from import time
+        # Can't test with different DATABASE_URL
+        pass
+
+# tests.py - Import inside test
+class TestCase1(unittest.TestCase):
+    def test_one(self):
+        os.environ['DATABASE_URL'] = 'test1.db'
+        from tutorial import hello_world  # Fresh import, fresh connection
+        pass
+
+class TestCase2(unittest.TestCase):
+    def test_two(self):
+        os.environ['DATABASE_URL'] = 'test2.db'
+        from tutorial import hello_world  # Different connection
+        pass
+```
+
+**Performance Note:**
+- Python caches imports in `sys.modules`
+- Subsequent imports from cache are fast
+- The performance hit is negligible
+- Test isolation is worth it
+
+**When Top-Level Import is OK:**
+```python
+# Testing utilities, not application code
+import unittest
+from pyramid import testing  # ✅ Framework code, no side effects
+
+# Third-party libraries
+import pytest  # ✅ No side effects
+from lxml import html  # ✅ No side effects
+
+# Your application code
+class Tests(unittest.TestCase):
+    def test_something(self):
+        from tutorial import my_view  # ✅ Application code, import inside
+```
+
+## Best Practices Summary
+
+### Testing Guidelines:
+- ✅ Write tests as you develop
+- ✅ Test the contract (expected behavior)
+- ✅ Keep tests fast and isolated
+- ✅ Import application code inside tests
+- ✅ Use descriptive test names
+- ✅ One assertion per test (generally)
+- ✅ Test both success and failure cases
+
+### Test Organization:
+```
+tutorial/
+├── __init__.py
+├── views.py
+└── tests.py         # or tests/
+                     #     ├── test_views.py
+                     #     ├── test_models.py
+                     #     └── test_utils.py
+```
+
+### Running Tests in Development:
+```bash
+# Quick check during development
+pytest tutorial/tests.py -q
+
+# With coverage
+pytest --cov=tutorial
+
+# Watch mode (with pytest-watch)
+ptw tutorial/
+
+# In CI/CD pipeline
+pytest --junitxml=report.xml
+```
+
+## Summary
+
+### Unit Testing with pytest
+✅ Provides immediate feedback on code changes
+✅ Catches bugs before manual testing
+✅ Documents expected behavior
+✅ Enables confident refactoring
+✅ Faster than manual browser testing
+
+### Pyramid Testing Helpers
+✅ `testing.setUp()`: Creates test configuration
+✅ `testing.tearDown()`: Cleans up after tests
+✅ `testing.DummyRequest()`: Creates mock requests
+✅ Enables testing without web server
+✅ Fast, isolated unit tests
+
+### pytest Advantages
+✅ Runs unittest-style tests
+✅ Simple assert statements
+✅ Better failure output
+✅ Rich plugin ecosystem
+✅ Less boilerplate than unittest
+✅ Industry standard for Python testing
 
 ---
 
