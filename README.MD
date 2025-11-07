@@ -3,6 +3,15 @@
 Name: Reyhan Capri Moraga
 NIM: 123140022
 
+# Before We Start
+
+Before diving into the tutorial sections, please ensure you have read and completed the [Requirements](./requirements.md) setup. This tutorial is structured to:
+
+* Start with basic concepts and gradually move to advanced topics
+* Build a complete web application step by step
+* Provide hands-on experience with Pyramid framework
+* Cover both development and deployment aspects
+
 # Tutorial Sections Analysis
 
 1. [Single-File Web Applications](./01_single_file_web_applications.md#01-single-file-web-applications-analysis)
@@ -96,18 +105,184 @@ Configuration process:
 
 # 02: Python Packages Analysis
 
-(Coming Soon)
+## Background Summary
+Python packages organize modules into namespaced units. Pyramid applications are typically structured as Python packages with a `setup.py` file for project management. This approach enables better organization, dependency management, and development workflow through tools like pip's editable installation mode.
 
 ## Key Components Analysis
 
 ### 1. Package Structure
-(To be filled)
+```
+package/
+├── setup.py              # Project configuration
+└── tutorial/             # Python package
+    ├── __init__.py       # Makes directory a package
+    └── app.py            # Application code
+```
 
-### 2. Module Organization
-(To be filled)
+**Directory Organization:**
+- **Project root (`package/`)**: Contains project-level files
+- **Package directory (`tutorial/`)**: The actual Python package
+- **`__init__.py`**: Special file that marks directory as a package
+- **`app.py`**: Application logic module
 
-### 3. Import System
-(To be filled)
+### 2. setup.py Configuration
+```python
+from setuptools import setup
+
+requires = [
+    'pyramid',
+    'waitress',
+]
+
+setup(
+    name='tutorial',
+    install_requires=requires,
+)
+```
+
+**Key Elements:**
+- **setuptools**: Python's packaging library
+- **name**: Project identifier ('tutorial')
+- **install_requires**: Lists dependencies (pyramid, waitress)
+- **Dependency management**: Automatically installs required packages
+
+### 3. Development Mode Installation
+```bash
+$VENV/bin/pip install -e .
+```
+
+**What happens:**
+- **`-e` flag**: Installs in "editable" or "development" mode
+- **`.` parameter**: Refers to current directory
+- **Effect**: Creates link to source code instead of copying
+- **Benefit**: Code changes are immediately available without reinstalling
+
+### 4. Package vs Project Distinction
+
+**Python Package:**
+- Directory with `__init__.py`
+- Contains related Python modules
+- Example: `tutorial/` directory
+
+**Python Project:**
+- Contains one or more packages
+- Has `setup.py` for configuration
+- Manages dependencies and metadata
+- Example: `package/` directory with `setup.py`
+
+## Code Analysis
+
+### The __init__.py File
+```python
+# package
+```
+- Minimal content (just a comment)
+- Primary purpose: marks directory as package
+- Can be empty or contain initialization code
+- Enables `import tutorial` statements
+
+### Application Module (app.py)
+The code remains identical to single-file version:
+```python
+from waitress import serve
+from pyramid.config import Configurator
+from pyramid.response import Response
+
+def hello_world(request):
+    print('Incoming request')
+    return Response('<body><h1>Hello World!</h1></body>')
+
+if __name__ == '__main__':
+    with Configurator() as config:
+        config.add_route('hello', '/')
+        config.add_view(hello_world, route_name='hello')
+        app = config.make_wsgi_app()
+    serve(app, host='0.0.0.0', port=6543)
+```
+
+**Key difference**: Now runs as module within package structure
+
+## Advantages of Package Structure
+
+### 1. Organization
+- Separates project configuration from code
+- Groups related modules together
+- Scales better for larger applications
+
+### 2. Dependency Management
+- Automatic installation of requirements
+- Version control for dependencies
+- Easier collaboration (others can install with same deps)
+
+### 3. Development Workflow
+- Editable installation for active development
+- No need to reinstall after code changes
+- Package available system-wide in virtual environment
+
+### 4. Professional Standards
+- Follows Python community best practices
+- Prepares for distribution (PyPI, etc.)
+- Enables testing and documentation tools
+
+## Important Notes
+
+### Running as Script
+```bash
+python tutorial/app.py
+```
+**Why this is unusual:**
+- Running module inside package directly is unconventional
+- Done here for tutorial clarity
+- Production apps use different entry points (console scripts, WSGI servers)
+- Generally considered bad practice
+
+### sys.path Consideration
+- Package must be on Python's `sys.path`
+- Development mode installation handles this automatically
+- Allows imports from anywhere: `from tutorial import app`
+
+## Working in Development Mode
+
+**Traditional Installation:**
+```bash
+pip install .  # Copies files to site-packages
+```
+
+**Development Installation:**
+```bash
+pip install -e .  # Creates link to source
+```
+
+**Benefits of `-e` flag:**
+- Edit code and see changes immediately
+- No reinstall needed after modifications
+- Perfect for active development
+- Easy debugging and testing
+
+## Extra Credit Answers
+
+1. **What happens without `__init__.py`?**
+   - Directory won't be recognized as package
+   - Import statements will fail
+   - Python 3.3+ has "namespace packages" but explicit `__init__.py` is clearer
+
+2. **Can `__init__.py` contain code?**
+   - Yes, it can contain initialization code
+   - Often used for package-level imports
+   - Executed when package is first imported
+   - Example: `from .app import hello_world`
+
+3. **Why use `setup.py` for small projects?**
+   - Dependency management
+   - Reproducible installations
+   - Professional development workflow
+   - Easy transition to larger projects
+
+4. **Difference between `pip install .` and `pip install -e .`?**
+   - Regular install: Copies files to site-packages
+   - Editable install: Creates symbolic link
+   - Editable allows real-time code changes
+   - Regular install requires reinstall after changes
 
 ---
 
