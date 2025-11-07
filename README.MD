@@ -3,15 +3,6 @@
 Name: Reyhan Capri Moraga
 NIM: 123140022
 
-# Before We Start
-
-Before diving into the tutorial sections, please ensure you have read and completed the [Requirements](./requirements.md) setup. This tutorial is structured to:
-
-- Start with basic concepts and gradually move to advanced topics
-- Build a complete web application step by step
-- Provide hands-on experience with Pyramid framework
-- Cover both development and deployment aspects
-
 # Tutorial Sections Analysis
 
 1. [Single-File Web Applications](#01-single-file-web-applications-analysis)
@@ -1562,6 +1553,7 @@ from tutorial import hello_world
 - Module-level code runs only once
 - State can leak between tests
 - Import side effects affect all tests
+- Example: `from tutorial import hello_world`
 
 **Real-World Example:**
 
@@ -1611,8 +1603,7 @@ class TestCase2(unittest.TestCase):
 - Subsequent imports from cache are fast
 - The performance hit is negligible
 - Test isolation is worth it
-
-**When Top-Level Import is OK:**
+- When Top-Level Import is OK:
 
 ```python
 # Testing utilities, not application code
@@ -1767,6 +1758,7 @@ from tutorial import hello_world  # ❌ Import at module level
 - Module-level code runs only once
 - State can leak between tests
 - Import side effects affect all tests
+- Example: `from tutorial import hello_world`
 
 **Real-World Example:**
 
@@ -1816,8 +1808,7 @@ class TestCase2(unittest.TestCase):
 - Subsequent imports from cache are fast
 - The performance hit is negligible
 - Test isolation is worth it
-
-**When Top-Level Import is OK:**
+- When Top-Level Import is OK:
 
 ```python
 # Testing utilities, not application code
@@ -2367,21 +2358,166 @@ class TutorialViews:
 
 ---
 
-# 10: Web Requests and Responses Analysis
+# 10: Handling Web Requests and Responses
 
-(Coming Soon)
+Web applications handle incoming requests and return outgoing responses. Pyramid makes working with requests and responses convenient and reliable.
 
-## Key Components Analysis
+## Objectives
 
-### 1. Request Object
+- Learn the background on Pyramid's choices for requests and responses.
+- Grab data out of the request.
+- Change information in the response headers.
 
-(To be filled)
+## Background
 
-### 2. Response Object
+Developing for the web means processing web requests. As this is a critical part of a web application, web developers need a robust, mature set of software for web requests and returning web responses.
 
-(To be filled)
+Pyramid has always fit nicely into the existing world of Python web development (virtual environments, packaging, cookiecutters, first to embrace Python 3, and so on). Pyramid turned to the well-regarded WebOb Python library for request and response handling. In our example above, Pyramid hands hello_world a request that is based on WebOb.
 
----
+## Steps
+
+First we copy the results of the view_classes step:
+
+```bash
+cd ..; cp -r view_classes request_response; cd request_response
+$VENV/bin/pip install -e .
+```
+
+Simplify the routes in `request_response/tutorial/__init__.py`:
+
+```python
+from pyramid.config import Configurator
+
+def main(global_config, **settings):
+    config = Configurator(settings=settings)
+    config.add_route('home', '/')
+    config.add_route('plain', '/plain')
+    config.scan('.views')
+    return config.make_wsgi_app()
+```
+
+We only need one view in `request_response/tutorial/views.py`:
+
+```python
+from pyramid.httpexceptions import HTTPFound
+from pyramid.response import Response
+from pyramid.view import view_config
+
+class TutorialViews:
+    def __init__(self, request):
+        self.request = request
+
+    @view_config(route_name='home')
+    def home(self):
+        return HTTPFound(location='/plain')
+
+    @view_config(route_name='plain')
+    def plain(self):
+        name = self.request.params.get('name', 'No Name Provided')
+
+        body = 'URL %s with name: %s' % (self.request.url, name)
+        return Response(
+            content_type='text/plain',
+            body=body
+        )
+```
+
+Update the tests in `request_response/tutorial/tests.py`:
+
+```python
+import unittest
+
+from pyramid import testing
+
+class TutorialViewTests(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+
+    def tearDown(self):
+        testing.tearDown()
+
+    def test_home(self):
+        from .views import TutorialViews
+
+        request = testing.DummyRequest()
+        inst = TutorialViews(request)
+        response = inst.home()
+        self.assertEqual(response.status, '302 Found')
+
+    def test_plain_without_name(self):
+        from .views import TutorialViews
+
+        request = testing.DummyRequest()
+        inst = TutorialViews(request)
+        response = inst.plain()
+        self.assertIn(b'No Name Provided', response.body)
+
+    def test_plain_with_name(self):
+        from .views import TutorialViews
+
+        request = testing.DummyRequest()
+        request.GET['name'] = 'Jane Doe'
+        inst = TutorialViews(request)
+        response = inst.plain()
+        self.assertIn(b'Jane Doe', response.body)
+
+class TutorialFunctionalTests(unittest.TestCase):
+    def setUp(self):
+        from tutorial import main
+
+        app = main({})
+        from webtest import TestApp
+
+        self.testapp = TestApp(app)
+
+    def test_plain_without_name(self):
+        res = self.testapp.get('/plain', status=200)
+        self.assertIn(b'No Name Provided', res.body)
+
+    def test_plain_with_name(self):
+        res = self.testapp.get('/plain?name=Jane%20Doe', status=200)
+        self.assertIn(b'Jane Doe', res.body)
+```
+
+Now run the tests:
+
+```bash
+$VENV/bin/pytest tutorial/tests.py -q
+.....
+5 passed in 0.30 seconds
+```
+
+Run your Pyramid application with:
+
+```bash
+$VENV/bin/pserve development.ini --reload
+```
+
+Open http://localhost:6543/ in your browser. You will be redirected to http://localhost:6543/plain.
+
+Open http://localhost:6543/plain?name=alice in your browser.
+
+## Analysis
+
+In this view class, we have two routes and two views, with the first leading to the second by an HTTP redirect. Pyramid can generate redirects by returning a special object from a view or raising a special exception.
+
+In this Pyramid view, we get the URL being visited from `request.url`. Also, if you visited http://localhost:6543/plain?name=alice, the name is included in the body of the response:
+
+```
+URL http://localhost:6543/plain?name=alice with name: alice
+```
+
+Finally, we set the response's content type and body, then return the response.
+
+We updated the unit and functional tests to prove that our code does the redirection, but also handles sending and not sending `/plain?name`.
+
+## Extra credit
+
+Could we also raise `HTTPFound(location='/plain')` instead of returning it? If so, what's the difference?
+
+- Yes, you can either return or raise `HTTPFound`. Returning it is more common in Pyramid, but raising works as well. Raising is useful if you want to interrupt processing and immediately redirect, especially in more complex logic.
+
+Request and Response Objects, generate redirects
 
 # 11: URL Routing Analysis
 
