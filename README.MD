@@ -1927,77 +1927,55 @@ class TutorialViewTests(unittest.TestCase):
     def tearDown(self):
         testing.tearDown()
 
-    def test_hello_world(self):
-        from tutorial import hello_world
-
+    def test_home(self):
+        from .views import home
         request = testing.DummyRequest()
-        response = hello_world(request)
+        response = home(request)
         self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Visit', response.body)
+
+    def test_hello(self):
+        from .views import hello
+        request = testing.DummyRequest()
+        response = hello(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Go back', response.body)
 
 class TutorialFunctionalTests(unittest.TestCase):
     def setUp(self):
-        from tutorial import main  # 1. Import the application factory
-        app = main({})             # 2. Create a WSGI application instance
+        from tutorial import main
+        app = main({})
         from webtest import TestApp
-        self.testapp = TestApp(app) # 3. Wrap the application with TestApp
-
-    def test_hello_world(self):
-        # 4. Make a GET request to '/'
+        self.testapp = TestApp(app)
+    def test_home(self):
         res = self.testapp.get('/', status=200)
-        # 5. Check that the response body contains the expected HTML
-        self.assertIn(b'<h1>Hello World!</h1>', res.body)
+        self.assertIn(b'<h1>Hi Home View', res.body)
+    def test_hello(self):
+        res = self.testapp.get('/howdy', status=200)
+        self.assertIn(b'<h1>Hi Hello View', res.body)
 ```
 
-### 3. Analysis of the Functional `setUp` Method
+- Unit tests call views directly and check for expected content
+- Functional tests use WebTest to simulate HTTP requests and check responses
 
-This `setUp` method is very different from the unit test's:
+## Analysis
 
-1.  `from tutorial import main`: Imports our **`main` factory** from `__init__.py`.
-2.  `app = main({})`: Executes the factory to get the **actual WSGI application object**. This is our complete app, with all its configuration, routes, and views.
-3.  `self.testapp = TestApp(app)`: This is the core of WebTest. We wrap our WSGI application inside `TestApp`, which gives us a "remote control" (`self.testapp`) to send fake HTTP requests to it.
-
-### 4. Analysis of the Functional `test_hello_world` Method
-
-1.  `res = self.testapp.get('/', status=200)`: This is the request simulation.
-    - `self.testapp.get('/')`: Simulates a browser making an **HTTP GET** to the root path (`/`).
-    - `status=200`: This is a built-in _assertion_ from WebTest. The test will **fail immediately** if the response status is _not_ 200 (OK).
-    - `res`: The `res` variable now holds the returned response object.
-2.  `self.assertIn(b'<h1>Hello World!</h1>', res.body)`: This is our main test.
-    - `res.body`: This is the **raw content** of the HTTP response.
-    - `b'...'`: The `b` prefix signifies a **byte string**. (See Extra Credit).
-    - `self.assertIn(...)`: We assert that the HTML text `<h1>Hello World!</h1>` (as bytes) is contained within the response body.
-
-## Analysis: Unit vs. Functional Test
-
-It's crucial to understand the difference between the two tests we now have in the same file:
-
-| Feature             | **Unit Test (Step 5)**                                        | **Functional Test (Step 6)**                                                |
-| :------------------ | :------------------------------------------------------------ | :-------------------------------------------------------------------------- |
-| **What is Tested?** | The `hello_world` function in **isolation**.                  | The **entire application stack** (Routing -> View -> Response).             |
-| **How?**            | Calling the Python function directly: `hello_world(request)`. | Simulating an HTTP request: `self.testapp.get('/')`.                        |
-| **Request**         | Uses `testing.DummyRequest()`, a fake object.                 | Uses `TestApp` to create a simulated, real HTTP request.                    |
-| **Routing**         | ❌ **Not tested.** We call the view directly.                 | ✅ **Is tested.** The app must map the `/` route to the `hello_world` view. |
-| **Templates**       | ❌ **Not tested.** (Though our view doesn't use one yet).     | ✅ **Is tested.** This test checks the final HTML output.                   |
-| **Speed**           | Extremely Fast                                                | Fast (but slightly slower than a unit test)                                 |
-
-**Conclusion:** Our unit test ensures the `hello_world` function returns a 200 status. Our functional test ensures that **a user visiting the `/` route in their browser will actually see the HTML `<h1>Hello World!</h1>`**.
+- Views and their registrations are now separated from startup code.
+- `config.scan('.views')` finds all views decorated with `@view_config`.
+- Two URLs: `/` and `/howdy`, each linking to the other.
+- The route name, URL, and view function name can all be different.
+- `@view_config` (declarative) and `config.add_view` (imperative) both register views; choice is a matter of taste.
 
 ## Extra Credit Answers
 
-### 1. Why do our functional tests use `b''`?
+1. **What does the dot in `.views` signify?**
+   - The dot means "relative import" from the current package, so `config.scan('.views')` scans the `views` module in the same package.
 
-The short answer: **Because HTTP responses are fundamentally bytes, not text.**
+2. **Why might `assertIn` be a better choice in testing the text in responses than `assertEqual`?**
+   - `assertIn` checks for the presence of a substring, making tests less brittle to formatting changes or extra content. `assertEqual` requires an exact match, which can fail if the response contains additional HTML or whitespace.
 
-1.  **HTTP is a Byte Protocol:** When a web server sends an HTML page, it sends a raw stream of **bytes**. The `Content-Type` header (e.g., `text/html; charset=utf-8`) tells the browser how to _interpret_ those bytes into text (Unicode).
-2.  **`res.body` vs. `res.text`:**
-    - `res.body` (which we used) gives us the **raw bytes** as they were sent.
-    - `res.text` (which we _could_ have used) would give us the **string** (Unicode) version after WebTest reads the headers and decodes it for us.
-3.  **Type Comparison:** In Python 3, you cannot compare `bytes` (from `res.body`) with a `str` (like `'<h1>...'`). Doing so will cause a `TypeError`.
-    - ❌ `self.assertIn('<h1>...</h1>', res.body)` -> **Error!** (comparing str to bytes)
-    - ✅ `self.assertIn(b'<h1>...</h1>', res.body)` -> **Correct!** (comparing bytes to bytes)
-    - ✅ `self.assertIn('<h1>...</h1>', res.text)` -> **Correct!** (comparing str to str)
-
-Using `b''` and `res.body` is good practice because it tests the rawest output of our application, before any decoding.
+3. **Views, View Configuration, and Debugging View Configuration**
+   - Views are functions that handle requests. Configuration can be done imperatively (`config.add_view`) or declaratively (`@view_config`). Debugging view configuration is easier with decorators and scanning, as it keeps view logic and registration together.
 
 ---
 
@@ -2073,10 +2051,10 @@ class TutorialFunctionalTests(unittest.TestCase):
         self.testapp = TestApp(app)
     def test_home(self):
         res = self.testapp.get('/', status=200)
-        self.assertIn(b'<body>Visit', res.body)
+        self.assertIn(b'<h1>Hi Home View', res.body)
     def test_hello(self):
         res = self.testapp.get('/howdy', status=200)
-        self.assertIn(b'<body>Go back', res.body)
+        self.assertIn(b'<h1>Hi Hello View', res.body)
 ```
 - Unit tests call views directly and check for expected content
 - Functional tests use WebTest to simulate HTTP requests and check responses
@@ -2104,17 +2082,114 @@ class TutorialFunctionalTests(unittest.TestCase):
 
 # 08: HTML Generation With Templating Analysis
 
-(Coming Soon)
+## Background Summary
+
+Most web frameworks avoid embedding HTML directly in code. Instead, they use a templating system to generate HTML. Pyramid encourages replaceability and does not mandate a specific template language, but supports Jinja2, Mako, and Chameleon. In this step, we use `pyramid_chameleon` to render HTML from template files.
 
 ## Key Components Analysis
 
-### 1. Template Engines
+### 1. Enable pyramid_chameleon
 
-(To be filled)
+Add `pyramid_chameleon` to `install_requires` in `setup.py`:
 
-### 2. HTML Rendering
+```python
+requires = [
+    'pyramid',
+    'pyramid_chameleon',
+    'waitress',
+]
+```
 
-(To be filled)
+Include it in the configurator in `tutorial/__init__.py`:
+
+```python
+def main(global_config, **settings):
+    config = Configurator(settings=settings)
+    config.include('pyramid_chameleon')
+    config.add_route('home', '/')
+    config.add_route('hello', '/howdy')
+    config.scan('.views')
+    return config.make_wsgi_app()
+```
+
+### 2. Views Use Renderers
+
+Move HTML out of views and use templates:
+
+```python
+from pyramid.view import view_config
+
+@view_config(route_name='home', renderer='home.pt')
+def home(request):
+    return {'name': 'Home View'}
+
+@view_config(route_name='hello', renderer='home.pt')
+def hello(request):
+    return {'name': 'Hello View'}
+```
+
+### 3. Template File (`home.pt`)
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Quick Tutorial: ${name}</title>
+</head>
+<body>
+<h1>Hi ${name}</h1>
+</body>
+</html>
+```
+
+### 4. Development Configuration
+
+Set `pyramid.reload_templates = true` in `development.ini` for auto-reloading templates.
+
+### 5. Updated Tests
+
+Unit tests now check returned data, not HTML:
+
+```python
+def test_home(self):
+    from .views import home
+    request = testing.DummyRequest()
+    response = home(request)
+    self.assertEqual('Home View', response['name'])
+
+def test_hello(self):
+    from .views import hello
+    request = testing.DummyRequest()
+    response = hello(request)
+    self.assertEqual('Hello View', response['name'])
+```
+
+Functional tests check rendered HTML:
+
+```python
+def test_home(self):
+    res = self.testapp.get('/', status=200)
+    self.assertIn(b'<h1>Hi Home View', res.body)
+
+def test_hello(self):
+    res = self.testapp.get('/howdy', status=200)
+    self.assertIn(b'<h1>Hi Hello View', res.body)
+```
+
+## Analysis
+
+- Views now focus on returning data, not HTML.
+- The `@view_config` decorator specifies a renderer (template file).
+- Both views use the same template.
+- Tests focus on data contracts for unit tests and HTML output for functional tests.
+
+## Extra Notes
+
+- Templates are easier to debug and maintain.
+- Pyramid supports multiple template systems via add-ons.
+- You can switch template engines as needed.
+
+Templates, Debugging Templates, and Available Add-On Template System Bindings.
 
 ---
 
