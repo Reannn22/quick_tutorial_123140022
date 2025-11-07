@@ -606,10 +606,12 @@ NIM: 123140022
 ## Extra Credit Answers
 
 1. What's the difference between root logger and tutorial logger?
+
    - Root logger: Parent logger for all loggers, catches all unhandled messages
    - Tutorial logger: Specific to the tutorial package, can have different settings
 
 2. What are the logging levels in order of severity?
+
    - DEBUG: Detailed information for debugging
    - INFO: General information about program execution
    - WARNING: Indicate a potential problem
@@ -617,10 +619,11 @@ NIM: 123140022
    - CRITICAL: Program may not be able to continue
 
 3. How do handler and formatter work together?
+
    - Handler: Determines where log messages go (console, file, etc.)
    - Formatter: Determines how log messages look (timestamp, level, etc.)
 
-4. Why use __name__ for the logger?
+4. Why use **name** for the logger?
    - Creates logger with module's name
    - Enables hierarchical logging configuration
    - Makes it easy to filter logs by module
@@ -816,3 +819,59 @@ NIM: 123140022
    - Configures authentication policy
    - Sets up security routes
    - Separates security from code
+
+---
+
+# 21: Protecting Resources With Authorization Analysis
+
+## Analysis
+
+- Access Control Lists (ACLs) define permissions on resources
+- Security policies determine user permissions
+- Root factory provides context for authorization
+- Forbidden views handle unauthorized access
+- Groups and principals manage user roles
+
+## Extra Credit Answers
+
+1. **What's the difference between user and principal?**
+
+   - User: Authenticated identity (e.g., 'editor')
+   - Principal: Security token (e.g., 'group:editors', Everyone)
+   - Users can have multiple principals
+   - Principals determine permissions
+
+2. **Can database replace GROUPS data store?**
+
+   - Yes, query database for user groups
+   - Cache results for performance
+   - Update effective_principals method
+   - Maintain same authorization interface
+
+3. **Is renderer required for @forbidden_view_config?**
+
+   - No, can return any response
+   - Renderer helps with error page templates
+   - Can customize forbidden response
+   - Common to show login form
+
+4. **How to enhance forbidden experience?**
+
+   - Custom error templates
+   - Clear error messages
+   - Alternative authentication options
+   - Redirect to appropriate pages
+
+5. **How to store security in database?**
+
+   - Create ACL models
+   - Load permissions dynamically
+   - Cache ACL lookups
+   - Update via admin interface
+
+6. **How to vary security by context?**
+
+   - Different ACLs per resource type
+   - Hierarchical permissions
+   - Context-specific factories
+   - URL-based security rules
