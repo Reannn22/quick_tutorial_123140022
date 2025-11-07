@@ -593,38 +593,80 @@ NIM: 123140022
 
 ---
 
-# 16: Collecting Application Info With Logging Analysis 
+# 16: Collecting Application Info With Logging Analysis
 
 ## Analysis
 
 - Uses standard Python logging module
 - Configuration defined in development.ini
-- Debug toolbar integrates logging output 
+- Debug toolbar integrates logging output
 - Messages can be filtered by level (DEBUG, INFO, etc.)
 - Logs show timestamp, level, module, and thread information
 
 ## Extra Credit Answers
 
-1. **What's the difference between root logger and tutorial logger?**
-
+1. What's the difference between root logger and tutorial logger?
    - Root logger: Parent logger for all loggers, catches all unhandled messages
    - Tutorial logger: Specific to the tutorial package, can have different settings
 
-2. **What are the logging levels in order of severity?**
-
+2. What are the logging levels in order of severity?
    - DEBUG: Detailed information for debugging
    - INFO: General information about program execution
    - WARNING: Indicate a potential problem
    - ERROR: A more serious problem
    - CRITICAL: Program may not be able to continue
 
-3. **How do handler and formatter work together?**
-
+3. How do handler and formatter work together?
    - Handler: Determines where log messages go (console, file, etc.)
    - Formatter: Determines how log messages look (timestamp, level, etc.)
 
-4. **Why use __name__ for the logger?**
-
-   - Creates logger with module's name 
+4. Why use __name__ for the logger?
+   - Creates logger with module's name
    - Enables hierarchical logging configuration
    - Makes it easy to filter logs by module
+
+---
+
+# 17: Transient Data Using Sessions Analysis
+
+## Analysis
+
+- Built-in session support through SignedCookieSessionFactory
+- Session data persists between requests
+- Counter example shows session-based state management
+- Flash messages enable cross-request notifications
+- Sessions stored in signed browser cookies by default
+
+## Extra Credit Answers
+
+1. **What's the purpose of SignedCookieSessionFactory?**
+
+   - Creates session factory for cookie-based storage
+   - Signs cookies to prevent tampering
+   - Configures session behavior and security
+
+2. **How does the counter property work with sessions?**
+
+   - Retrieves counter from session storage
+   - Increments value if exists, initializes if not
+   - Persists between page reloads and URLs
+
+3. **What are flash messages used for?**
+
+   - Display temporary notifications across requests
+   - Common for form submission feedback
+   - Automatically cleared after being shown
+
+4. **How do sessions differ from regular request data?**
+
+   - Persist across multiple requests
+   - Available until browser closes or timeout
+   - Shared across all views in application
+
+5. **What session storage alternatives exist?**
+
+   - Redis sessions (pyramid_redis_sessions)
+   - Database sessions
+   - Memory sessions
+   - Custom session implementations
+
