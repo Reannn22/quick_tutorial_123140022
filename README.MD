@@ -770,77 +770,49 @@ NIM: 123140022
 
 ---
 
-# 20: Authentication Analysis
+# 20: Logins with Authentication Analysis
 
 ## Analysis
 
-- Authentication verifies user identity
-- Pyramid provides flexible authentication policies
-- Passwords should be securely hashed and salted
-- Authentication tokens can be used for stateless sessions
+- Uses bcrypt for secure password hashing
+- Authentication policy manages user identity
+- Cookie-based authentication via AuthTktCookieHelper
+- Login/logout views handle user sessions
+- Configuration-driven security settings
 
 ## Extra Credit Answers
 
-1. **What is the purpose of the `authentication` policy?**
+1. **Can database authentication replace in-memory USERS?**
 
-   - Defines how users are authenticated in the application.
-   - Can use sessions, tokens, or other methods for authentication.
+   - Yes, replace USERS dictionary with database queries
+   - Use SQLAlchemy models for user storage
+   - Hash passwords before storing in database
+   - Maintain same security interface
 
-2. **How does Pyramid handle password hashing?**
+2. **What user information is available per request?**
 
-   - Uses the `hashlib` library for secure password hashing.
-   - Passwords should be hashed with a unique salt for each user.
+   - request.authenticated_userid contains user ID
+   - Security policy adds identity to request
+   - Session can store additional user data
+   - Debug with pdb to inspect request attributes
 
-3. **What are the benefits of using authentication tokens?**
+3. **How does the security policy work?**
 
-   - Stateless and can be used across different servers or services.
-   - Simplifies API authentication and mobile app integration.
+   - Implements authentication interface
+   - Manages cookie-based user sessions
+   - Validates user credentials
+   - Provides remember/forget functionality
 
-4. **How can you implement remember me functionality?**
+4. **Why use bcrypt for passwords?**
 
-   - By setting a persistent cookie with a token or session ID.
-   - The token or session ID should be securely generated and stored.
+   - One-way hashing with salt
+   - Industry-standard password security
+   - Protects against rainbow table attacks
+   - Configurable work factor for security
 
-5. **What is the difference between authentication and authorization?**
+5. **What's the role of security configuration?**
 
-   - Authentication verifies who you are, authorization determines what you can do.
-   - Both are essential for securing web applications.
-
----
-
-# 21: Authorization Analysis
-
-## Analysis
-
-- Authorization determines user permissions
-- Pyramid provides flexible authorization policies
-- Permissions can be based on roles, attributes, or other factors
-- ACLs define permissions for resources and views
-
-## Extra Credit Answers
-
-1. **What is the purpose of the `authorization` policy?**
-
-   - Defines how user permissions are managed in the application.
-   - Controls access to resources and views based on permissions.
-
-2. **How does Pyramid handle roles and permissions?**
-
-   - Roles are assigned to users and define a set of permissions.
-   - Permissions can be checked against the user's roles.
-
-3. **What are the benefits of using ACLs?**
-
-   - Fine-grained control over permissions for resources and views.
-   - Easy to understand and manage.
-
-4. **How can you implement object-level permissions?**
-
-   - By defining permissions on individual resources or objects.
-   - Permissions can be based on attributes or other criteria.
-
-5. **What is the difference between authentication and authorization?**
-
-   - Authentication verifies who you are, authorization determines what you can do.
-   - Both are essential for securing web applications.
-
+   - Defines secret key for cookie signing
+   - Configures authentication policy
+   - Sets up security routes
+   - Separates security from code
