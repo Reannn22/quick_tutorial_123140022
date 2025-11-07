@@ -288,15 +288,445 @@ pip install -e .  # Creates link to source
 
 # 03: Application Configuration Analysis
 
-(Coming Soon)
+## Background Summary
+Pyramid separates configuration from code using `.ini` files, leveraging Python's Setuptools entry points. This approach uses the `pserve` command to bootstrap applications, providing a standardized way to configure WSGI servers, logging, and application settings. This configuration-driven approach distinguishes Pyramid from other Python web frameworks.
 
 ## Key Components Analysis
 
-### 1. Configuration Files
-(To be filled)
+### 1. Entry Points in setup.py
+```python
+from setuptools import setup
 
-### 2. Settings Management
-(To be filled)
+requires = [
+    'pyramid',
+    'waitress',
+]
+
+setup(
+    name='tutorial',
+    install_requires=requires,
+    entry_points={
+        'paste.app_factory': [
+            'main = tutorial:main'
+        ],
+    },
+)
+```
+
+**Entry Point Breakdown:**
+- **`paste.app_factory`**: Standard entry point category for WSGI apps
+- **`main`**: Name of this specific entry point
+- **`tutorial:main`**: Points to `main` function in `tutorial` package
+- **Purpose**: Tells Pyramid where to find the WSGI application factory
+
+### 2. Configuration File Structure (development.ini)
+```ini
+[app:main]
+use = egg:tutorial
+
+[server:main]
+use = egg:waitress#main
+listen = localhost:6543
+```
+
+**Section Analysis:**
+
+**[app:main]:**
+- Defines the WSGI application configuration
+- `use = egg:tutorial`: References the installed package entry point
+- Pyramid looks up the `tutorial:main` entry point from setup.py
+
+**[server:main]:**
+- Configures the WSGI server
+- `use = egg:waitress#main`: Specifies Waitress as WSGI server
+- `listen = localhost:6543`: Sets host and port binding
+
+### 3. Application Factory Pattern (__init__.py)
+```python
+from pyramid.config import Configurator
+from pyramid.response import Response
+
+def hello_world(request):
+    return Response('<body><h1>Hello World!</h1></body>')
+
+def main(global_config, **settings):
+    config = Configurator(settings=settings)
+    config.add_route('hello', '/')
+    config.add_view(hello_world, route_name='hello')
+    return config.make_wsgi_app()
+```
+
+**Function Signatures:**
+
+**`main(global_config, **settings)`:**
+- **global_config**: Global configuration from .ini file (rarely used)
+- **settings**: Keyword arguments from app section in .ini
+- **Returns**: WSGI application instance
+
+**Application Factory Pattern:**
+- Function that creates and returns WSGI app
+- Called once during server startup
+- Allows dynamic configuration based on .ini settings
+
+### 4. Bootstrap Process Flow
+
+```
+1. pserve development.ini
+   ↓
+2. Reads [app:main] section
+   ↓
+3. Finds "use = egg:tutorial"
+   ↓
+4. Looks up entry point in setup.py
+   ↓
+5. Finds "main = tutorial:main"
+   ↓
+6. Imports tutorial package
+   ↓
+7. Calls tutorial.main(global_config, **settings)
+   ↓
+8. Returns WSGI app
+   ↓
+9. Passes to [server:main] (Waitress)
+   ↓
+10. Server starts listening on localhost:6543
+```
+
+## Code Changes from Previous Step
+
+### Removed: tutorial/app.py
+- No longer needed with pserve
+- Logic moved to `__init__.py`
+- Eliminates direct script execution
+
+### Modified: setup.py
+```python
+# Added entry_points section
+entry_points={
+    'paste.app_factory': [
+        'main = tutorial:main'
+    ],
+},
+```
+
+### Modified: tutorial/__init__.py
+```python
+# Changed from:
+if __name__ == '__main__':
+    # bootstrap code
+
+# To:
+def main(global_config, **settings):
+    # bootstrap code
+    return config.make_wsgi_app()
+```
+
+**Key Differences:**
+- No more `if __name__ == '__main__'`
+- Removed direct `serve()` call
+- Added factory function pattern
+- Configuration passed as parameters
+
+## Configuration File Benefits
+
+### 1. Separation of Concerns
+- Configuration separate from code
+- Easy to modify without touching Python
+- Different configs for dev/staging/production
+
+### 2. WSGI Server Configuration
+```ini
+[server:main]
+use = egg:waitress#main
+listen = localhost:6543
+```
+- Centralized server settings
+- Easy to switch WSGI servers
+- Port and host configuration
+- Can add workers, threads, timeouts
+
+### 3. Python Logging Configuration
+```ini
+# (Not shown in minimal example)
+[loggers]
+keys = root, tutorial
+
+[handlers]
+keys = console
+
+[formatters]
+keys = generic
+```
+- Standard Python logging setup
+- Configurable log levels
+- Multiple handlers (console, file, etc.)
+- Professional logging without code changes
+
+### 4. Environment-Specific Configurations
+```
+development.ini  # Dev settings (debug on, auto-reload)
+production.ini   # Prod settings (debug off, optimized)
+testing.ini      # Test settings (test database)
+```
+
+## pserve Command
+
+### Basic Usage
+```bash
+$VENV/bin/pserve development.ini
+```
+
+### With Auto-Reload
+```bash
+$VENV/bin/pserve development.ini --reload
+```
+
+**`--reload` Flag:**
+- Monitors filesystem for changes
+- Automatically restarts application
+- Watches Python files, .ini files, templates
+- Essential for development workflow
+- **Do not use in production**
+
+### Other Useful Flags
+```bash
+pserve development.ini --reload --verbose  # More logging
+pserve development.ini -n 4                # Multiple processes
+```
+
+## Package Structure Evolution
+
+**Before (Step 02):**
+```
+package/
+├── setup.py
+└── tutorial/
+    ├── __init__.py    # Empty
+    └── app.py         # All code here
+```
+
+**After (Step 03):**
+```
+ini/
+├── setup.py           # Added entry_points
+├── development.ini    # New configuration file
+└── tutorial/
+    └── __init__.py    # Contains main() factory
+```
+
+**Changes:**
+- Removed `app.py`
+- Added `development.ini`
+- Moved code to `__init__.py`
+- Added entry point in `setup.py`
+
+## Why Move Code to __init__.py?
+
+### Common Pyramid Convention
+```python
+# tutorial/__init__.py
+def main(global_config, **settings):
+    """Application factory"""
+    config = Configurator(settings=settings)
+    # ... configuration ...
+    return config.make_wsgi_app()
+```
+
+**Advantages:**
+- Package-level initialization
+- Clear entry point for application
+- Separates app creation from view logic
+- Follows Pyramid community standards
+
+**Alternative Approach:**
+```python
+# Could use tutorial/app.py instead
+entry_points={
+    'paste.app_factory': [
+        'main = tutorial.app:main'
+    ],
+},
+```
+
+## Installation and Egg Info
+
+### Running Installation
+```bash
+$VENV/bin/pip install -e .
+```
+
+**What Happens:**
+- Checks dependencies in `setup.py`
+- Installs missing packages
+- Generates `tutorial.egg-info/` directory
+- Registers entry points
+- Creates development link
+
+### Egg Info Directory
+```
+tutorial.egg-info/
+├── PKG-INFO
+├── SOURCES.txt
+├── dependency_links.txt
+├── entry_points.txt      # Contains our entry point
+├── requires.txt
+└── top_level.txt
+```
+
+**entry_points.txt contains:**
+```
+[paste.app_factory]
+main = tutorial:main
+```
+
+## Extra Credit Answers
+
+### 1. Could you do this in Python code without .ini files?
+
+**Yes, absolutely!** Example:
+
+```python
+# Without .ini
+if __name__ == '__main__':
+    settings = {
+        'pyramid.reload_templates': True,
+        'pyramid.debug_authorization': False,
+        'pyramid.debug_notfound': False,
+    }
+    
+    config = Configurator(settings=settings)
+    config.add_route('hello', '/')
+    config.add_view(hello_world, route_name='hello')
+    app = config.make_wsgi_app()
+    
+    serve(app, host='localhost', port=6543)
+```
+
+**Why use .ini then?**
+- Easier for non-programmers to modify
+- Standard format for deployment tools
+- Cleaner separation of config and code
+- Logging configuration in one place
+- Industry best practice
+
+### 2. Can we have multiple .ini files? Why?
+
+**Yes!** Very common pattern:
+
+```
+development.ini     # Local development
+production.ini      # Production server
+testing.ini         # Automated tests
+staging.ini         # Staging environment
+```
+
+**Why multiple configs?**
+- Different database connections
+- Different debug settings
+- Different logging levels
+- Different server configurations
+- Different security settings
+
+**Usage:**
+```bash
+pserve development.ini  # Development
+pserve production.ini   # Production
+pserve testing.ini      # Testing
+```
+
+### 3. Why didn't entry point mention __init__.py?
+
+**Python Package Import Rules:**
+
+```python
+entry_points={
+    'paste.app_factory': [
+        'main = tutorial:main'  # Not tutorial.__init__:main
+    ],
+}
+```
+
+**Explanation:**
+- `tutorial` refers to the **package**, not a module
+- When you import a package, Python automatically imports `__init__.py`
+- `tutorial:main` means "the `main` function in the `tutorial` package"
+- Python knows to look in `__init__.py`
+- This is standard Python import behavior
+
+**Equivalent Imports:**
+```python
+from tutorial import main           # Looks in __init__.py
+from tutorial.__init__ import main  # Explicitly, but unnecessary
+```
+
+### 4. What is `**settings`? What does `**` signify?
+
+**Python's kwargs (Keyword Arguments):**
+
+```python
+def main(global_config, **settings):
+    # settings is a dictionary
+    pass
+```
+
+**The `**` operator:**
+- Collects all keyword arguments into a dictionary
+- Called "kwargs" in Python
+- Allows flexible parameter passing
+
+**Example:**
+```python
+# Calling the function
+main(config, debug=True, reload=True, db_url='sqlite:///test.db')
+
+# Inside function, settings equals:
+# {
+#     'debug': True,
+#     'reload': True,
+#     'db_url': 'sqlite:///test.db'
+# }
+```
+
+**From .ini file:**
+```ini
+[app:main]
+use = egg:tutorial
+pyramid.reload_templates = true
+pyramid.debug_all = false
+```
+
+These become:
+```python
+settings = {
+    'pyramid.reload_templates': 'true',
+    'pyramid.debug_all': 'false'
+}
+```
+
+**Usage in code:**
+```python
+def main(global_config, **settings):
+    config = Configurator(settings=settings)  # Pass along
+    # Or access individually:
+    debug = settings.get('pyramid.debug_all', False)
+```
+
+## Summary of Benefits
+
+### Configuration-Driven Approach
+✅ Separate code from configuration
+✅ Multiple environments (dev/prod/test)
+✅ Standard Python logging setup
+✅ Easy WSGI server switching
+✅ No code changes for deployment
+✅ Industry-standard PasteDeploy format
+
+### pserve Benefits
+✅ Auto-reload during development
+✅ Standard command across Pyramid apps
+✅ Manages WSGI server lifecycle
+✅ Proper logging configuration
+✅ Production-ready deployment pattern
 
 ---
 

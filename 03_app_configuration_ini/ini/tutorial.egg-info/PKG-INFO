@@ -1,0 +1,6 @@
+Metadata-Version: 2.4
+Name: tutorial
+Version: 0.0.0
+Requires-Dist: pyramid
+Requires-Dist: waitress
+Dynamic: requires-dist
