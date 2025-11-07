@@ -721,3 +721,126 @@ NIM: 123140022
 
 ---
 
+# 19: Databases Using SQLAlchemy Analysis
+
+## Analysis
+
+- Uses SQLAlchemy ORM for database interactions
+- Transaction management through pyramid_tm and zope.sqlalchemy
+- Console scripts for database initialization
+- Models define database schema using declarative base
+- Views perform CRUD operations through database session
+
+## Extra Credit Answers
+
+1. **Why use transaction management?**
+
+   - Automatic handling of commits/rollbacks
+   - Error handling rolls back transactions
+   - Views don't need explicit transaction code
+   - Consistent database state maintained
+
+2. **What's the role of zope.sqlalchemy?**
+
+   - Integrates SQLAlchemy with Pyramid's transaction manager
+   - Manages database session lifecycle
+   - Handles commit/rollback automatically
+   - Ensures thread-safety
+
+3. **Why use console scripts?**
+
+   - Provides command-line database management
+   - Enables initialization and migrations
+   - Separates admin tasks from web code
+   - Follows Python packaging best practices
+
+4. **How does model declaration work?**
+
+   - Uses SQLAlchemy declarative base
+   - Models inherit from Base class
+   - Columns defined using SQLAlchemy types
+   - Relationships managed through ORM
+
+5. **Why configuration over code?**
+
+   - Database URL in .ini file not code
+   - Environment-specific settings
+   - Easier deployment configuration
+   - Follows separation of concerns
+
+---
+
+# 20: Authentication Analysis
+
+## Analysis
+
+- Authentication verifies user identity
+- Pyramid provides flexible authentication policies
+- Passwords should be securely hashed and salted
+- Authentication tokens can be used for stateless sessions
+
+## Extra Credit Answers
+
+1. **What is the purpose of the `authentication` policy?**
+
+   - Defines how users are authenticated in the application.
+   - Can use sessions, tokens, or other methods for authentication.
+
+2. **How does Pyramid handle password hashing?**
+
+   - Uses the `hashlib` library for secure password hashing.
+   - Passwords should be hashed with a unique salt for each user.
+
+3. **What are the benefits of using authentication tokens?**
+
+   - Stateless and can be used across different servers or services.
+   - Simplifies API authentication and mobile app integration.
+
+4. **How can you implement remember me functionality?**
+
+   - By setting a persistent cookie with a token or session ID.
+   - The token or session ID should be securely generated and stored.
+
+5. **What is the difference between authentication and authorization?**
+
+   - Authentication verifies who you are, authorization determines what you can do.
+   - Both are essential for securing web applications.
+
+---
+
+# 21: Authorization Analysis
+
+## Analysis
+
+- Authorization determines user permissions
+- Pyramid provides flexible authorization policies
+- Permissions can be based on roles, attributes, or other factors
+- ACLs define permissions for resources and views
+
+## Extra Credit Answers
+
+1. **What is the purpose of the `authorization` policy?**
+
+   - Defines how user permissions are managed in the application.
+   - Controls access to resources and views based on permissions.
+
+2. **How does Pyramid handle roles and permissions?**
+
+   - Roles are assigned to users and define a set of permissions.
+   - Permissions can be checked against the user's roles.
+
+3. **What are the benefits of using ACLs?**
+
+   - Fine-grained control over permissions for resources and views.
+   - Easy to understand and manage.
+
+4. **How can you implement object-level permissions?**
+
+   - By defining permissions on individual resources or objects.
+   - Permissions can be based on attributes or other criteria.
+
+5. **What is the difference between authentication and authorization?**
+
+   - Authentication verifies who you are, authorization determines what you can do.
+   - Both are essential for securing web applications.
+
