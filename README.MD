@@ -1557,124 +1557,74 @@ from tutorial import hello_world
 - Avoids import side effects
 - Maintains test isolation
 - Each test gets clean imports
-- Follows unit testing best practice
+- Module-level code runs only once
+- State can leak between tests
+- Import side effects affect all tests
 
-**2. Create Mock Request:**
-
-```python
-request = testing.DummyRequest()
-```
-
-- DummyRequest is a fake HTTP request
-- Has all required request attributes
-- Customizable for test scenarios
-
-**3. Call the View:**
+**Real-World Example:**
 
 ```python
-response = hello_world(request)
+# tutorial/__init__.py
+import os
+
+# This runs at import time
+DATABASE_URL = os.getenv('DATABASE_URL', 'default.db')
+connection = connect_to_database(DATABASE_URL)
+
+def hello_world(request):
+    # Uses the module-level connection
+    return Response('Hello')
+
+# tests.py - Top-level import
+from tutorial import hello_world  # Connection created NOW
+
+class TestCase1(unittest.TestCase):
+    def test_one(self):
+        # Uses connection from import time
+        pass
+
+class TestCase2(unittest.TestCase):
+    def test_two(self):
+        # Still uses SAME connection from import time
+        # Can't test with different DATABASE_URL
+        pass
+
+# tests.py - Import inside test
+class TestCase1(unittest.TestCase):
+    def test_one(self):
+        os.environ['DATABASE_URL'] = 'test1.db'
+        from tutorial import hello_world  # Fresh import, fresh connection
+        pass
+
+class TestCase2(unittest.TestCase):
+    def test_two(self):
+        os.environ['DATABASE_URL'] = 'test2.db'
+        from tutorial import hello_world  # Different connection
+        pass
 ```
 
-- Calls view function directly
-- No HTTP server needed
-- Fast execution
-- Returns Response object
+**Performance Note:**
 
-**4. Assert Expected Behavior:**
+- Python caches imports in `sys.modules`
+- Subsequent imports from cache are fast
+- The performance hit is negligible
+- Test isolation is worth it
+
+**When Top-Level Import is OK:**
 
 ```python
-self.assertEqual(response.status_code, 200)
-```
+# Testing utilities, not application code
+import unittest
+from pyramid import testing  # ✅ Framework code, no side effects
 
-- Verifies HTTP status code is 200 (OK)
-- Tests the "contract" of the view
-- Confirms view works as expected
-- Fails if view behavior changes
+# Third-party libraries
+import pytest  # ✅ No side effects
+from lxml import html  # ✅ No side effects
 
-### 4. Running Tests with pytest
-
-**Command:**
-
-```bash
-$VENV/bin/pytest tutorial/tests.py -q
-```
-
-**Output:**
-
-```
-.
-1 passed in 0.14 seconds
-```
-
-**Command Flags:**
-
-- `pytest`: The test runner
-- `tutorial/tests.py`: Test file to run
-- `-q`: Quiet mode (less verbose output)
-
-**Output Explanation:**
-
-- `.`: One dot per passing test
-- `1 passed`: Number of successful tests
-- `in 0.14 seconds`: Execution time
-
-### 5. pytest vs unittest
-
-**Why Use pytest?**
-
-**Feature Comparison:**
-
-```python
-# unittest style
-class TestSomething(unittest.TestCase):
-    def test_example(self):
-        self.assertEqual(result, expected)
-
-# pytest style (also supported)
-def test_example():
-    assert result == expected
-```
-
-**pytest Advantages:**
-
-- Runs unittest tests without modification
-- Simple assert statements (vs self.assertEqual)
-- Better test discovery
-- Rich failure reporting
-- Fixtures for test setup
-- Plugins ecosystem
-- Parametrized testing
-- Less boilerplate code
-
-**Test Discovery:**
-
-```bash
-# pytest finds tests automatically
-pytest                          # All tests in project
-pytest tutorial/                # All tests in directory
-pytest tutorial/tests.py        # Specific file
-pytest -k hello                 # Tests matching pattern
-```
-
-**Better Failure Output:**
-
-```
-# unittest
-F
-======================================================================
-FAIL: test_hello_world (tutorial.tests.TutorialViewTests)
-----------------------------------------------------------------------
-AssertionError: 404 != 200
-
-# pytest
-    def test_hello_world(self):
-        from tutorial import hello_world
-        request = testing.DummyRequest()
-        response = hello_world(request)
->       self.assertEqual(response.status_code, 200)
-E       AssertionError: 404 != 200
-E       Expected: 200
-E       Actual: 404
+# Your application code
+class Tests(unittest.TestCase):
+    def test_something(self):
+        from tutorial import my_view  # ✅ Application code, import inside
 ```
 
 ## Pyramid Testing Helpers
@@ -1801,7 +1751,7 @@ def test_view_needs_config(self):
 ### 1. Test Isolation (Units)
 
 ```python
-from tutorial import hello_world  # ✅ Import inside test
+from tutorial import hello_world  # ✅ Import inside
 
 # vs.
 
@@ -1922,21 +1872,6 @@ ptw tutorial/
 pytest --junitxml=report.xml
 ```
 
-## Analysis: Unit vs. Functional Test
-
-It's crucial to understand the difference between the two tests we now have in the same file:
-
-| Feature             | **Unit Test (Step 5)**                                        | **Functional Test (Step 6)**                                                |
-| :------------------ | :------------------------------------------------------------ | :-------------------------------------------------------------------------- |
-| **What is Tested?** | The `hello_world` function in **isolation**.                  | The **entire application stack** (Routing -> View -> Response).             |
-| **How?**            | Calling the Python function directly: `hello_world(request)`. | Simulating an HTTP request: `self.testapp.get('/')`.                        |
-| **Request**         | Uses `testing.DummyRequest()`, a fake object.                 | Uses `TestApp` to create a simulated, real HTTP request.                    |
-| **Routing**         | ❌ **Not tested.** We call the view directly.                 | ✅ **Is tested.** The app must map the `/` route to the `hello_world` view. |
-| **Templates**       | ❌ **Not tested.** (Though our view doesn't use one yet).     | ✅ **Is tested.** This test checks the final HTML output.                   |
-| **Speed**           | Extremely Fast                                                | Fast (but slightly slower than a unit test)                                 |
-
-**Conclusion:** Our unit test ensures the `hello_world` function returns a 200 status. Our functional test ensures that **a user visiting the `/` route in their browser will actually see the HTML `<h1>Hello World!</h1>`**.
-
 ---
 
 # 06: Functional Testing Analysis
@@ -1985,7 +1920,6 @@ We **add a new test class** to our existing `tutorial/tests.py` file. This file 
 import unittest
 from pyramid import testing
 
-# === UNIT TEST CLASS (FROM STEP 5) ===
 class TutorialViewTests(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()
@@ -2000,7 +1934,6 @@ class TutorialViewTests(unittest.TestCase):
         response = hello_world(request)
         self.assertEqual(response.status_code, 200)
 
-# === NEW FUNCTIONAL TEST CLASS (STEP 6) ===
 class TutorialFunctionalTests(unittest.TestCase):
     def setUp(self):
         from tutorial import main  # 1. Import the application factory
@@ -2068,19 +2001,104 @@ Using `b''` and `res.body` is good practice because it tests the rawest output o
 
 ---
 
-# 07: Basic Web Handling Analysis
+# 07: Basic Web Handling With Views Analysis
 
-(Coming Soon)
+## Background Summary
+
+In Pyramid, views are the main way to handle web requests and return responses. Previously, everything (view function, registration, route, and WSGI launcher) was in one file. Now, views are moved to a separate `views.py` module, and the configurator scans this module for decorators that register views. This approach organizes code better and allows declarative configuration using decorators.
 
 ## Key Components Analysis
 
-### 1. Request Handling
+### 1. Application Startup (`tutorial/__init__.py`)
 
-(To be filled)
+```python
+from pyramid.config import Configurator
 
-### 2. Response Generation
+def main(global_config, **settings):
+    config = Configurator(settings=settings)
+    config.add_route('home', '/')
+    config.add_route('hello', '/howdy')
+    config.scan('.views')
+    return config.make_wsgi_app()
+```
+- Adds two routes: `'home'` and `'hello'`
+- Scans the `views` module for view registrations via decorators
 
-(To be filled)
+### 2. Views Module (`tutorial/views.py`)
+
+```python
+from pyramid.response import Response
+from pyramid.view import view_config
+
+@view_config(route_name='home')
+def home(request):
+    return Response('<body>Visit <a href="/howdy">hello</a></body>')
+
+@view_config(route_name='hello')
+def hello(request):
+    return Response('<body>Go back <a href="/">home</a></body>')
+```
+- Uses `@view_config` decorator for declarative view registration
+- Each view returns a simple HTML response with a link to the other view
+
+### 3. Updated Tests (`tutorial/tests.py`)
+
+```python
+import unittest
+from pyramid import testing
+
+class TutorialViewTests(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+    def tearDown(self):
+        testing.tearDown()
+    def test_home(self):
+        from .views import home
+        request = testing.DummyRequest()
+        response = home(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Visit', response.body)
+    def test_hello(self):
+        from .views import hello
+        request = testing.DummyRequest()
+        response = hello(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Go back', response.body)
+
+class TutorialFunctionalTests(unittest.TestCase):
+    def setUp(self):
+        from tutorial import main
+        app = main({})
+        from webtest import TestApp
+        self.testapp = TestApp(app)
+    def test_home(self):
+        res = self.testapp.get('/', status=200)
+        self.assertIn(b'<body>Visit', res.body)
+    def test_hello(self):
+        res = self.testapp.get('/howdy', status=200)
+        self.assertIn(b'<body>Go back', res.body)
+```
+- Unit tests call views directly and check for expected content
+- Functional tests use WebTest to simulate HTTP requests and check responses
+
+## Analysis
+
+- Views and their registrations are now separated from startup code.
+- `config.scan('.views')` finds all views decorated with `@view_config`.
+- Two URLs: `/` and `/howdy`, each linking to the other.
+- The route name, URL, and view function name can all be different.
+- `@view_config` (declarative) and `config.add_view` (imperative) both register views; choice is a matter of taste.
+
+## Extra Credit Answers
+
+1. **What does the dot in `.views` signify?**
+   - The dot means "relative import" from the current package, so `config.scan('.views')` scans the `views` module in the same package.
+
+2. **Why might `assertIn` be a better choice in testing the text in responses than `assertEqual`?**
+   - `assertIn` checks for the presence of a substring, making tests less brittle to formatting changes or extra content. `assertEqual` requires an exact match, which can fail if the response contains additional HTML or whitespace.
+
+3. **Views, View Configuration, and Debugging View Configuration**
+   - Views are functions that handle requests. Configuration can be done imperatively (`config.add_view`) or declaratively (`@view_config`). Debugging view configuration is easier with decorators and scanning, as it keeps view logic and registration together.
 
 ---
 
