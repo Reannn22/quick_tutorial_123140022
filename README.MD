@@ -1021,7 +1021,7 @@ Your App         Add-on
 │                                 │  ┌──────────┐
 │                                 │  │ Pyramid  │ ← Click to open
 │                                 │  │   ⚙️     │
-│                                 │  └──────────┘
+│                                 └──────────┘
 └─────────────────────────────────┘
 ```
 
@@ -1185,8 +1185,10 @@ dev_requires = [
    # Developer installs
    pip install -e ".[dev]"
 
+
    # CI/CD installs
    pip install -e ".[test]"
+
 
    # Production installs
    pip install .
@@ -1969,9 +1971,11 @@ class TutorialFunctionalTests(unittest.TestCase):
 ## Extra Credit Answers
 
 1. **What does the dot in `.views` signify?**
+
    - The dot means "relative import" from the current package, so `config.scan('.views')` scans the `views` module in the same package.
 
 2. **Why might `assertIn` be a better choice in testing the text in responses than `assertEqual`?**
+
    - `assertIn` checks for the presence of a substring, making tests less brittle to formatting changes or extra content. `assertEqual` requires an exact match, which can fail if the response contains additional HTML or whitespace.
 
 3. **Views, View Configuration, and Debugging View Configuration**
@@ -1999,6 +2003,7 @@ def main(global_config, **settings):
     config.scan('.views')
     return config.make_wsgi_app()
 ```
+
 - Adds two routes: `'home'` and `'hello'`
 - Scans the `views` module for view registrations via decorators
 
@@ -2008,14 +2013,15 @@ def main(global_config, **settings):
 from pyramid.response import Response
 from pyramid.view import view_config
 
-@view_config(route_name='home')
+@view_config(route_name='home', renderer='home.pt')
 def home(request):
-    return Response('<body>Visit <a href="/howdy">hello</a></body>')
+    return {'name': 'Home View'}
 
-@view_config(route_name='hello')
+@view_config(route_name='hello', renderer='home.pt')
 def hello(request):
-    return Response('<body>Go back <a href="/">home</a></body>')
+    return {'name': 'Hello View'}
 ```
+
 - Uses `@view_config` decorator for declarative view registration
 - Each view returns a simple HTML response with a link to the other view
 
@@ -2028,34 +2034,39 @@ from pyramid import testing
 class TutorialViewTests(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()
+
     def tearDown(self):
         testing.tearDown()
+
     def test_home(self):
         from .views import home
         request = testing.DummyRequest()
         response = home(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b'Visit', response.body)
+        self.assertEqual('Home View', response['name'])
+
     def test_hello(self):
         from .views import hello
         request = testing.DummyRequest()
         response = hello(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b'Go back', response.body)
+        self.assertEqual('Hello View', response['name'])
 
 class TutorialFunctionalTests(unittest.TestCase):
     def setUp(self):
         from tutorial import main
         app = main({})
         from webtest import TestApp
+
         self.testapp = TestApp(app)
+
     def test_home(self):
         res = self.testapp.get('/', status=200)
         self.assertIn(b'<h1>Hi Home View', res.body)
+
     def test_hello(self):
         res = self.testapp.get('/howdy', status=200)
         self.assertIn(b'<h1>Hi Hello View', res.body)
 ```
+
 - Unit tests call views directly and check for expected content
 - Functional tests use WebTest to simulate HTTP requests and check responses
 
@@ -2070,9 +2081,11 @@ class TutorialFunctionalTests(unittest.TestCase):
 ## Extra Credit Answers
 
 1. **What does the dot in `.views` signify?**
+
    - The dot means "relative import" from the current package, so `config.scan('.views')` scans the `views` module in the same package.
 
 2. **Why might `assertIn` be a better choice in testing the text in responses than `assertEqual`?**
+
    - `assertIn` checks for the presence of a substring, making tests less brittle to formatting changes or extra content. `assertEqual` requires an exact match, which can fail if the response contains additional HTML or whitespace.
 
 3. **Views, View Configuration, and Debugging View Configuration**
@@ -2133,12 +2146,12 @@ def hello(request):
 ```html
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <title>Quick Tutorial: ${name}</title>
-</head>
-<body>
-<h1>Hi ${name}</h1>
-</body>
+  </head>
+  <body>
+    <h1>Hi ${name}</h1>
+  </body>
 </html>
 ```
 
@@ -2193,19 +2206,164 @@ Templates, Debugging Templates, and Available Add-On Template System Bindings.
 
 ---
 
-# 09: View Classes Analysis
+# 09: Organizing Views With View Classes
 
-(Coming Soon)
+## Background
 
-## Key Components Analysis
+So far our views have been simple, free-standing functions. Many times your views are related to one another. They may consist of different ways to look at or work on the same data, or be a REST API that handles multiple operations. Grouping these views together as a view class makes sense:
 
-### 1. Class-Based Views
+- Group views.
+- Centralize some repetitive defaults.
+- Share some state and helpers.
 
-(To be filled)
+In this step we just do the absolute minimum to convert the existing views to a view class. In a later tutorial step, we'll examine view classes in depth.
 
-### 2. View Methods
+## Objectives
 
-(To be filled)
+- Group related views into a view class.
+- Centralize configuration with class-level `@view_defaults`.
+
+## Steps
+
+First, copy the results of the previous step:
+
+```bash
+cd ..; cp -r templating view_classes; cd view_classes
+$VENV/bin/pip install -e .
+```
+
+Our `view_classes/tutorial/views.py` now has a view class with our two views:
+
+```python
+from pyramid.view import (
+    view_config,
+    view_defaults
+    )
+
+@view_defaults(renderer='home.pt')
+class TutorialViews:
+    def __init__(self, request):
+        self.request = request
+
+    @view_config(route_name='home')
+    def home(self):
+        return {'name': 'Home View'}
+
+    @view_config(route_name='hello')
+    def hello(self):
+        return {'name': 'Hello View'}
+```
+
+Our unit tests in `view_classes/tutorial/tests.py` don't run, so let's modify them to import the view class, and make an instance before getting a response:
+
+```python
+import unittest
+
+from pyramid import testing
+
+class TutorialViewTests(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+
+    def tearDown(self):
+        testing.tearDown()
+
+    def test_home(self):
+        from .views import TutorialViews
+
+        request = testing.DummyRequest()
+        inst = TutorialViews(request)
+        response = inst.home()
+        self.assertEqual('Home View', response['name'])
+
+    def test_hello(self):
+        from .views import TutorialViews
+
+        request = testing.DummyRequest()
+        inst = TutorialViews(request)
+        response = inst.hello()
+        self.assertEqual('Hello View', response['name'])
+
+class TutorialFunctionalTests(unittest.TestCase):
+    def setUp(self):
+        from tutorial import main
+        app = main({})
+        from webtest import TestApp
+
+        self.testapp = TestApp(app)
+
+    def test_home(self):
+        res = self.testapp.get('/', status=200)
+        self.assertIn(b'<h1>Hi Home View', res.body)
+
+    def test_hello(self):
+        res = self.testapp.get('/howdy', status=200)
+        self.assertIn(b'<h1>Hi Hello View', res.body)
+```
+
+Now run the tests:
+
+```bash
+$VENV/bin/pytest tutorial/tests.py -q
+....
+4 passed in 0.34 seconds
+```
+
+Run your Pyramid application with:
+
+```bash
+$VENV/bin/pserve development.ini --reload
+```
+
+Open http://localhost:6543/ and http://localhost:6543/howdy in your browser.
+
+## Analysis
+
+To ease the transition to view classes, we didn't introduce any new functionality. We simply changed the view functions to methods on a view class, then updated the tests.
+
+In our `TutorialViews` view class, you can see that our two view functions are logically grouped together as methods on a common class. Since the two views shared the same template, we could move that to a `@view_defaults` decorator at the class level.
+
+The tests needed to change. Obviously we needed to import the view class. But you can also see the pattern in the tests of instantiating the view class with the dummy request first, then calling the view method being tested.
+
+## Defining a View Callable as a Class
+
+```python
+from pyramid.view import (
+    view_config,
+    view_defaults
+    )
+
+@view_defaults(renderer='home.pt')
+class TutorialViews:
+    def __init__(self, request):
+        self.request = request
+
+    @view_config(route_name='home')
+    def home(self):
+        return {'name': 'Home View'}
+
+    @view_config(route_name='hello')
+    def hello(self):
+        return {'name': 'Hello View'}
+```
+
+- `view_config`: Decorator to configure views
+- `view_defaults`: Class-level decorator for shared configuration
+- `TutorialViews`: View class to group related views
+- `__init__(self, request)`: Constructor to initialize request
+- `home(self)`: Method to handle home view
+- `hello(self)`: Method to handle hello view
+
+**Benefits:**
+
+- Group related views
+- Centralize configuration
+- Share state and helpers
+
+**Next Steps:**
+
+- Explore view classes in depth
+- Learn about class-based views, view methods, and advanced patterns
 
 ---
 
