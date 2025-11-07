@@ -7,10 +7,10 @@ NIM: 123140022
 
 Before diving into the tutorial sections, please ensure you have read and completed the [Requirements](./requirements.md) setup. This tutorial is structured to:
 
-* Start with basic concepts and gradually move to advanced topics
-* Build a complete web application step by step
-* Provide hands-on experience with Pyramid framework
-* Cover both development and deployment aspects
+- Start with basic concepts and gradually move to advanced topics
+- Build a complete web application step by step
+- Provide hands-on experience with Pyramid framework
+- Cover both development and deployment aspects
 
 # Tutorial Sections Analysis
 
@@ -41,16 +41,19 @@ Before diving into the tutorial sections, please ensure you have read and comple
 # 01: Single-File Web Applications Analysis
 
 ## Background Summary
+
 Pyramid can function as a microframework using a single-file module, while also scaling to larger applications. It implements WSGI standard and follows MVC pattern.
 
 ## Key Components Analysis
 
 ### 1. Application Structure
+
 ```python
 from waitress import serve
 from pyramid.config import Configurator
 from pyramid.response import Response
 ```
+
 - Uses Waitress as WSGI server
 - Configurator for application setup
 - Response for handling HTTP responses
@@ -64,7 +67,9 @@ def hello_world(request):
     print('Incoming request')
     return Response('<body><h1>Hello World!</h1></body>')
 ```
+
 This view function:
+
 - Accepts a request parameter
 - Prints debugging information
 - Returns HTML response
@@ -77,7 +82,9 @@ if __name__ == '__main__':
         app = config.make_wsgi_app()
     serve(app, host='0.0.0.0', port=6543)
 ```
+
 Configuration process:
+
 - Sets up URL routing
 - Connects view to route
 - Creates WSGI application
@@ -86,14 +93,17 @@ Configuration process:
 ## Extra Credit Answers
 
 1. `print('Incoming request')` vs `print 'Incoming request'`:
+
    - The parentheses version is Python 3 syntax
    - Print without parentheses is Python 2 legacy syntax
 
 2. Return value alternatives:
+
    - HTML string: Would need to be wrapped in Response()
    - Integer sequence: Would raise a type error as Response expects string-like object
 
 3. Invalid code (print xyz):
+
    - Raises NameError because xyz is undefined
    - Shows Pyramid's error handling capabilities
 
@@ -106,11 +116,13 @@ Configuration process:
 # 02: Python Packages Analysis
 
 ## Background Summary
+
 Python packages organize modules into namespaced units. Pyramid applications are typically structured as Python packages with a `setup.py` file for project management. This approach enables better organization, dependency management, and development workflow through tools like pip's editable installation mode.
 
 ## Key Components Analysis
 
 ### 1. Package Structure
+
 ```
 package/
 ├── setup.py              # Project configuration
@@ -120,12 +132,14 @@ package/
 ```
 
 **Directory Organization:**
+
 - **Project root (`package/`)**: Contains project-level files
 - **Package directory (`tutorial/`)**: The actual Python package
 - **`__init__.py`**: Special file that marks directory as a package
 - **`app.py`**: Application logic module
 
 ### 2. setup.py Configuration
+
 ```python
 from setuptools import setup
 
@@ -141,17 +155,20 @@ setup(
 ```
 
 **Key Elements:**
+
 - **setuptools**: Python's packaging library
 - **name**: Project identifier ('tutorial')
 - **install_requires**: Lists dependencies (pyramid, waitress)
 - **Dependency management**: Automatically installs required packages
 
 ### 3. Development Mode Installation
+
 ```bash
 $VENV/bin/pip install -e .
 ```
 
 **What happens:**
+
 - **`-e` flag**: Installs in "editable" or "development" mode
 - **`.` parameter**: Refers to current directory
 - **Effect**: Creates link to source code instead of copying
@@ -160,11 +177,13 @@ $VENV/bin/pip install -e .
 ### 4. Package vs Project Distinction
 
 **Python Package:**
+
 - Directory with `__init__.py`
 - Contains related Python modules
 - Example: `tutorial/` directory
 
 **Python Project:**
+
 - Contains one or more packages
 - Has `setup.py` for configuration
 - Manages dependencies and metadata
@@ -172,17 +191,21 @@ $VENV/bin/pip install -e .
 
 ## Code Analysis
 
-### The __init__.py File
+### The **init**.py File
+
 ```python
 # package
 ```
+
 - Minimal content (just a comment)
 - Primary purpose: marks directory as package
 - Can be empty or contain initialization code
 - Enables `import tutorial` statements
 
 ### Application Module (app.py)
+
 The code remains identical to single-file version:
+
 ```python
 from waitress import serve
 from pyramid.config import Configurator
@@ -205,21 +228,25 @@ if __name__ == '__main__':
 ## Advantages of Package Structure
 
 ### 1. Organization
+
 - Separates project configuration from code
 - Groups related modules together
 - Scales better for larger applications
 
 ### 2. Dependency Management
+
 - Automatic installation of requirements
 - Version control for dependencies
 - Easier collaboration (others can install with same deps)
 
 ### 3. Development Workflow
+
 - Editable installation for active development
 - No need to reinstall after code changes
 - Package available system-wide in virtual environment
 
 ### 4. Professional Standards
+
 - Follows Python community best practices
 - Prepares for distribution (PyPI, etc.)
 - Enables testing and documentation tools
@@ -227,16 +254,20 @@ if __name__ == '__main__':
 ## Important Notes
 
 ### Running as Script
+
 ```bash
 python tutorial/app.py
 ```
+
 **Why this is unusual:**
+
 - Running module inside package directly is unconventional
 - Done here for tutorial clarity
 - Production apps use different entry points (console scripts, WSGI servers)
 - Generally considered bad practice
 
 ### sys.path Consideration
+
 - Package must be on Python's `sys.path`
 - Development mode installation handles this automatically
 - Allows imports from anywhere: `from tutorial import app`
@@ -244,16 +275,19 @@ python tutorial/app.py
 ## Working in Development Mode
 
 **Traditional Installation:**
+
 ```bash
 pip install .  # Copies files to site-packages
 ```
 
 **Development Installation:**
+
 ```bash
 pip install -e .  # Creates link to source
 ```
 
 **Benefits of `-e` flag:**
+
 - Edit code and see changes immediately
 - No reinstall needed after modifications
 - Perfect for active development
@@ -262,17 +296,20 @@ pip install -e .  # Creates link to source
 ## Extra Credit Answers
 
 1. **What happens without `__init__.py`?**
+
    - Directory won't be recognized as package
    - Import statements will fail
    - Python 3.3+ has "namespace packages" but explicit `__init__.py` is clearer
 
 2. **Can `__init__.py` contain code?**
+
    - Yes, it can contain initialization code
    - Often used for package-level imports
    - Executed when package is first imported
    - Example: `from .app import hello_world`
 
 3. **Why use `setup.py` for small projects?**
+
    - Dependency management
    - Reproducible installations
    - Professional development workflow
@@ -289,11 +326,13 @@ pip install -e .  # Creates link to source
 # 03: Application Configuration Analysis
 
 ## Background Summary
+
 Pyramid separates configuration from code using `.ini` files, leveraging Python's Setuptools entry points. This approach uses the `pserve` command to bootstrap applications, providing a standardized way to configure WSGI servers, logging, and application settings. This configuration-driven approach distinguishes Pyramid from other Python web frameworks.
 
 ## Key Components Analysis
 
 ### 1. Entry Points in setup.py
+
 ```python
 from setuptools import setup
 
@@ -314,12 +353,14 @@ setup(
 ```
 
 **Entry Point Breakdown:**
+
 - **`paste.app_factory`**: Standard entry point category for WSGI apps
 - **`main`**: Name of this specific entry point
 - **`tutorial:main`**: Points to `main` function in `tutorial` package
 - **Purpose**: Tells Pyramid where to find the WSGI application factory
 
 ### 2. Configuration File Structure (development.ini)
+
 ```ini
 [app:main]
 use = egg:tutorial
@@ -332,16 +373,19 @@ listen = localhost:6543
 **Section Analysis:**
 
 **[app:main]:**
+
 - Defines the WSGI application configuration
 - `use = egg:tutorial`: References the installed package entry point
 - Pyramid looks up the `tutorial:main` entry point from setup.py
 
 **[server:main]:**
+
 - Configures the WSGI server
 - `use = egg:waitress#main`: Specifies Waitress as WSGI server
 - `listen = localhost:6543`: Sets host and port binding
 
-### 3. Application Factory Pattern (__init__.py)
+### 3. Application Factory Pattern (**init**.py)
+
 ```python
 from pyramid.config import Configurator
 from pyramid.response import Response
@@ -358,12 +402,14 @@ def main(global_config, **settings):
 
 **Function Signatures:**
 
-**`main(global_config, **settings)`:**
+**`main(global_config, **settings)`:\*\*
+
 - **global_config**: Global configuration from .ini file (rarely used)
 - **settings**: Keyword arguments from app section in .ini
 - **Returns**: WSGI application instance
 
 **Application Factory Pattern:**
+
 - Function that creates and returns WSGI app
 - Called once during server startup
 - Allows dynamic configuration based on .ini settings
@@ -395,11 +441,13 @@ def main(global_config, **settings):
 ## Code Changes from Previous Step
 
 ### Removed: tutorial/app.py
+
 - No longer needed with pserve
 - Logic moved to `__init__.py`
 - Eliminates direct script execution
 
 ### Modified: setup.py
+
 ```python
 # Added entry_points section
 entry_points={
@@ -409,7 +457,8 @@ entry_points={
 },
 ```
 
-### Modified: tutorial/__init__.py
+### Modified: tutorial/**init**.py
+
 ```python
 # Changed from:
 if __name__ == '__main__':
@@ -422,6 +471,7 @@ def main(global_config, **settings):
 ```
 
 **Key Differences:**
+
 - No more `if __name__ == '__main__'`
 - Removed direct `serve()` call
 - Added factory function pattern
@@ -430,22 +480,26 @@ def main(global_config, **settings):
 ## Configuration File Benefits
 
 ### 1. Separation of Concerns
+
 - Configuration separate from code
 - Easy to modify without touching Python
 - Different configs for dev/staging/production
 
 ### 2. WSGI Server Configuration
+
 ```ini
 [server:main]
 use = egg:waitress#main
 listen = localhost:6543
 ```
+
 - Centralized server settings
 - Easy to switch WSGI servers
 - Port and host configuration
 - Can add workers, threads, timeouts
 
 ### 3. Python Logging Configuration
+
 ```ini
 # (Not shown in minimal example)
 [loggers]
@@ -457,12 +511,14 @@ keys = console
 [formatters]
 keys = generic
 ```
+
 - Standard Python logging setup
 - Configurable log levels
 - Multiple handlers (console, file, etc.)
 - Professional logging without code changes
 
 ### 4. Environment-Specific Configurations
+
 ```
 development.ini  # Dev settings (debug on, auto-reload)
 production.ini   # Prod settings (debug off, optimized)
@@ -472,16 +528,19 @@ testing.ini      # Test settings (test database)
 ## pserve Command
 
 ### Basic Usage
+
 ```bash
 $VENV/bin/pserve development.ini
 ```
 
 ### With Auto-Reload
+
 ```bash
 $VENV/bin/pserve development.ini --reload
 ```
 
 **`--reload` Flag:**
+
 - Monitors filesystem for changes
 - Automatically restarts application
 - Watches Python files, .ini files, templates
@@ -489,6 +548,7 @@ $VENV/bin/pserve development.ini --reload
 - **Do not use in production**
 
 ### Other Useful Flags
+
 ```bash
 pserve development.ini --reload --verbose  # More logging
 pserve development.ini -n 4                # Multiple processes
@@ -497,6 +557,7 @@ pserve development.ini -n 4                # Multiple processes
 ## Package Structure Evolution
 
 **Before (Step 02):**
+
 ```
 package/
 ├── setup.py
@@ -506,6 +567,7 @@ package/
 ```
 
 **After (Step 03):**
+
 ```
 ini/
 ├── setup.py           # Added entry_points
@@ -515,14 +577,16 @@ ini/
 ```
 
 **Changes:**
+
 - Removed `app.py`
 - Added `development.ini`
 - Moved code to `__init__.py`
 - Added entry point in `setup.py`
 
-## Why Move Code to __init__.py?
+## Why Move Code to **init**.py?
 
 ### Common Pyramid Convention
+
 ```python
 # tutorial/__init__.py
 def main(global_config, **settings):
@@ -533,12 +597,14 @@ def main(global_config, **settings):
 ```
 
 **Advantages:**
+
 - Package-level initialization
 - Clear entry point for application
 - Separates app creation from view logic
 - Follows Pyramid community standards
 
 **Alternative Approach:**
+
 ```python
 # Could use tutorial/app.py instead
 entry_points={
@@ -551,11 +617,13 @@ entry_points={
 ## Installation and Egg Info
 
 ### Running Installation
+
 ```bash
 $VENV/bin/pip install -e .
 ```
 
 **What Happens:**
+
 - Checks dependencies in `setup.py`
 - Installs missing packages
 - Generates `tutorial.egg-info/` directory
@@ -563,6 +631,7 @@ $VENV/bin/pip install -e .
 - Creates development link
 
 ### Egg Info Directory
+
 ```
 tutorial.egg-info/
 ├── PKG-INFO
@@ -574,6 +643,7 @@ tutorial.egg-info/
 ```
 
 **entry_points.txt contains:**
+
 ```
 [paste.app_factory]
 main = tutorial:main
@@ -593,16 +663,17 @@ if __name__ == '__main__':
         'pyramid.debug_authorization': False,
         'pyramid.debug_notfound': False,
     }
-    
+
     config = Configurator(settings=settings)
     config.add_route('hello', '/')
     config.add_view(hello_world, route_name='hello')
     app = config.make_wsgi_app()
-    
+
     serve(app, host='localhost', port=6543)
 ```
 
 **Why use .ini then?**
+
 - Easier for non-programmers to modify
 - Standard format for deployment tools
 - Cleaner separation of config and code
@@ -621,6 +692,7 @@ staging.ini         # Staging environment
 ```
 
 **Why multiple configs?**
+
 - Different database connections
 - Different debug settings
 - Different logging levels
@@ -628,13 +700,14 @@ staging.ini         # Staging environment
 - Different security settings
 
 **Usage:**
+
 ```bash
 pserve development.ini  # Development
 pserve production.ini   # Production
 pserve testing.ini      # Testing
 ```
 
-### 3. Why didn't entry point mention __init__.py?
+### 3. Why didn't entry point mention **init**.py?
 
 **Python Package Import Rules:**
 
@@ -647,6 +720,7 @@ entry_points={
 ```
 
 **Explanation:**
+
 - `tutorial` refers to the **package**, not a module
 - When you import a package, Python automatically imports `__init__.py`
 - `tutorial:main` means "the `main` function in the `tutorial` package"
@@ -654,6 +728,7 @@ entry_points={
 - This is standard Python import behavior
 
 **Equivalent Imports:**
+
 ```python
 from tutorial import main           # Looks in __init__.py
 from tutorial.__init__ import main  # Explicitly, but unnecessary
@@ -669,12 +744,14 @@ def main(global_config, **settings):
     pass
 ```
 
-**The `**` operator:**
+**The `**` operator:\*\*
+
 - Collects all keyword arguments into a dictionary
 - Called "kwargs" in Python
 - Allows flexible parameter passing
 
 **Example:**
+
 ```python
 # Calling the function
 main(config, debug=True, reload=True, db_url='sqlite:///test.db')
@@ -688,6 +765,7 @@ main(config, debug=True, reload=True, db_url='sqlite:///test.db')
 ```
 
 **From .ini file:**
+
 ```ini
 [app:main]
 use = egg:tutorial
@@ -696,6 +774,7 @@ pyramid.debug_all = false
 ```
 
 These become:
+
 ```python
 settings = {
     'pyramid.reload_templates': 'true',
@@ -704,6 +783,7 @@ settings = {
 ```
 
 **Usage in code:**
+
 ```python
 def main(global_config, **settings):
     config = Configurator(settings=settings)  # Pass along
@@ -714,6 +794,7 @@ def main(global_config, **settings):
 ## Summary of Benefits
 
 ### Configuration-Driven Approach
+
 ✅ Separate code from configuration
 ✅ Multiple environments (dev/prod/test)
 ✅ Standard Python logging setup
@@ -722,6 +803,7 @@ def main(global_config, **settings):
 ✅ Industry-standard PasteDeploy format
 
 ### pserve Benefits
+
 ✅ Auto-reload during development
 ✅ Standard command across Pyramid apps
 ✅ Manages WSGI server lifecycle
@@ -733,11 +815,13 @@ def main(global_config, **settings):
 # 04: Debug Toolbar Analysis
 
 ## Background Summary
+
 The `pyramid_debugtoolbar` is a popular Pyramid add-on that provides debugging and introspection tools directly in the browser. It demonstrates how Pyramid add-ons work, how they integrate via configuration, and introduces Setuptools extras for optional dependencies. This toolbar significantly improves development productivity by providing error tracebacks, request inspection, and performance profiling.
 
 ## Key Components Analysis
 
 ### 1. Setuptools Extras in setup.py
+
 ```python
 from setuptools import setup
 
@@ -767,35 +851,41 @@ setup(
 **Dependency Structure:**
 
 **`install_requires`:**
+
 - Core dependencies needed for the app to run
 - Installed with: `pip install -e .`
 - Required in all environments (dev/prod)
 - Examples: pyramid, waitress
 
 **`extras_require`:**
+
 - Optional dependencies grouped by purpose
 - Installed with: `pip install -e ".[dev]"`
 - Environment-specific requirements
 - Key = extra name, Value = list of packages
 
 **Why Separate?**
+
 - Production doesn't need debug tools
 - Smaller production deployments
 - Faster production installations
 - Clear separation of concerns
 
 ### 2. Installing with Extras
+
 ```bash
 $VENV/bin/pip install -e ".[dev]"
 ```
 
 **Command Breakdown:**
+
 - **`-e`**: Editable/development mode
 - **`.`**: Current directory (package root)
 - **`[dev]`**: Install the "dev" extra
 - **`"..."`**: Quotes needed for shell interpretation
 
 **What Gets Installed:**
+
 ```
 pyramid          (from requires)
 waitress         (from requires)
@@ -803,6 +893,7 @@ pyramid_debugtoolbar (from dev_requires)
 ```
 
 **Alternative Installations:**
+
 ```bash
 pip install -e .              # Core only
 pip install -e ".[dev]"       # Core + dev extras
@@ -810,6 +901,7 @@ pip install -e ".[dev,test]"  # Multiple extras
 ```
 
 ### 3. Configuration via pyramid.includes
+
 ```ini
 [app:main]
 use = egg:tutorial
@@ -822,12 +914,14 @@ listen = localhost:6543
 ```
 
 **pyramid.includes Explained:**
+
 - Declarative configuration in .ini file
 - Each line names a Pyramid add-on to include
 - Executed during application startup
 - Alternative to imperative `config.include()`
 
 **How It Works:**
+
 ```
 1. pserve reads development.ini
 2. Finds pyramid.includes section
@@ -839,17 +933,20 @@ listen = localhost:6543
 ### 4. Two Ways to Include Add-ons
 
 **Declarative (in .ini file):**
+
 ```ini
 pyramid.includes =
     pyramid_debugtoolbar
     pyramid_tm
     pyramid_jinja2
 ```
+
 ✅ No code changes needed
 ✅ Easy to enable/disable per environment
 ✅ Configuration-driven
 
-**Imperative (in __init__.py):**
+**Imperative (in **init**.py):**
+
 ```python
 def main(global_config, **settings):
     config = Configurator(settings=settings)
@@ -858,6 +955,7 @@ def main(global_config, **settings):
     # ... rest of configuration
     return config.make_wsgi_app()
 ```
+
 ✅ Programmatic control
 ✅ Conditional includes
 ✅ Required for some add-ons
@@ -867,12 +965,14 @@ def main(global_config, **settings):
 ### What is a Pyramid Add-on?
 
 **Definition:**
+
 - Python package that extends Pyramid
 - Follows specific conventions
 - Has an `includeme()` function
 - Configures itself when included
 
 **Structure:**
+
 ```python
 # Inside pyramid_debugtoolbar package
 def includeme(config):
@@ -883,6 +983,7 @@ def includeme(config):
 ```
 
 ### Popular Pyramid Add-ons
+
 - **pyramid_debugtoolbar**: Development debugging
 - **pyramid_jinja2**: Jinja2 templating
 - **pyramid_tm**: Transaction management
@@ -911,6 +1012,7 @@ Your App         Add-on
 ## Debug Toolbar Features
 
 ### 1. Visual Toolbar Interface
+
 ```
 ┌─────────────────────────────────┐
 │  Your Web Application           │
@@ -924,6 +1026,7 @@ Your App         Add-on
 ```
 
 **Toolbar Panels:**
+
 - **Request/Response**: HTTP headers, status
 - **Performance**: Timing information
 - **SQLAlchemy**: Database queries (if using)
@@ -932,13 +1035,16 @@ Your App         Add-on
 - **Introspection**: Application structure
 
 ### 2. Error Handling
+
 **Before Debugtoolbar:**
+
 ```
 Internal Server Error
 The server encountered an internal error.
 ```
 
 **With Debugtoolbar:**
+
 ```
 Traceback (most recent call last):
   File "tutorial/__init__.py", line 6, in hello_world
@@ -953,12 +1059,14 @@ NameError: name 'xResponse' is not defined
 ```
 
 ### 3. Interactive Debugger
+
 - Click screen icon on traceback lines
 - Inspect variables at that point in code
 - Execute Python expressions
 - Test fixes before editing code
 
 ### 4. HTML Injection
+
 ```html
 <!-- Your original HTML -->
 <body>
@@ -974,6 +1082,7 @@ NameError: name 'xResponse' is not defined
 ```
 
 **Important Note:**
+
 - Injects before closing `</body>` tag
 - May cause CSS/JS conflicts in rare cases
 - Can be disabled by commenting out in .ini
@@ -981,6 +1090,7 @@ NameError: name 'xResponse' is not defined
 ## Configuration Management
 
 ### Development Configuration
+
 ```ini
 # development.ini
 [app:main]
@@ -991,6 +1101,7 @@ pyramid.reload_templates = true
 ```
 
 ### Production Configuration
+
 ```ini
 # production.ini
 [app:main]
@@ -1001,6 +1112,7 @@ pyramid.reload_templates = false
 ```
 
 **Benefits:**
+
 - No code changes between environments
 - Just use different .ini file
 - Safe production deployment
@@ -1008,11 +1120,12 @@ pyramid.reload_templates = false
 
 ## Extra Credit Answers
 
-### 1. Why use `dev_requires` instead of `requires`?
+1. **Why use `dev_requires` instead of `requires`?**
 
 **Reasons for Separation:**
 
 **Production Concerns:**
+
 ```python
 # BAD: Everything in requires
 requires = [
@@ -1025,6 +1138,7 @@ requires = [
 ```
 
 **Better Approach:**
+
 ```python
 # GOOD: Separated by purpose
 requires = [
@@ -1042,38 +1156,44 @@ dev_requires = [
 **Advantages:**
 
 1. **Smaller Production Deployments**
+
    - Less disk space
    - Faster deployments
    - Fewer security risks
 
 2. **Security**
+
    - Debug tools expose sensitive info
    - Shouldn't be in production
    - Attack surface reduction
 
 3. **Performance**
+
    - Debug tools add overhead
    - Slower request processing
    - Memory usage
 
 4. **Clarity**
+
    - Clear what's optional
    - Self-documenting dependencies
    - Easy to understand purpose
 
 5. **Flexibility**
+
    ```bash
    # Developer installs
    pip install -e ".[dev]"
-   
+
    # CI/CD installs
    pip install -e ".[test]"
-   
+
    # Production installs
    pip install .
    ```
 
 **Common Extras Categories:**
+
 ```python
 extras_require={
     'dev': [
@@ -1095,12 +1215,14 @@ extras_require={
 ### 2. Introduce a Bug and Use Interactive Debugger
 
 **Original Code:**
+
 ```python
 def hello_world(request):
     return Response('<body><h1>Hello World!</h1></body>')
 ```
 
 **Buggy Code:**
+
 ```python
 def hello_world(request):
     return xResponse('<body><h1>Hello World!</h1></body>')
@@ -1110,13 +1232,14 @@ def hello_world(request):
 **What Happens:**
 
 **In Browser:**
+
 ```
 NameError: name 'xResponse' is not defined
 
 Traceback (most recent call last):
-  File "/path/to/tutorial/__init__.py", line 6, in hello_world
+  File ".../tutorial/__init__.py", line 6, in hello_world
     return xResponse('<body><h1>Hello World!</h1></body>')
-                    
+
 [Local Variables]
 request = <Request GET http://localhost:6543/>
 ```
@@ -1160,27 +1283,30 @@ Click the screen icon (🖥️) on the error line to get an interactive Python s
 **What You Can Discover:**
 
 1. **Request Information:**
+
    ```python
    >>> request.url
    'http://localhost:6543/'
-   
+
    >>> request.headers
    {'Host': 'localhost:6543', 'User-Agent': '...', ...}
-   
+
    >>> request.environ
    {...}  # Full WSGI environment
    ```
 
 2. **Available Imports:**
+
    ```python
    >>> Response
    <class 'pyramid.response.Response'>
-   
+
    >>> Configurator
    NameError  # Not imported in this scope
    ```
 
 3. **Test Fixes:**
+
    ```python
    >>> # Try the correct code
    >>> resp = Response('<body><h1>Hello World!</h1></body>')
@@ -1191,23 +1317,25 @@ Click the screen icon (🖥️) on the error line to get an interactive Python s
    ```
 
 4. **Explore the Framework:**
+
    ```python
    >>> request.registry
    <Registry ...>
-   
+
    >>> request.matched_route
    <Route 'hello' ...>
-   
+
    >>> request.route_url('hello')
    'http://localhost:6543/'
    ```
 
 5. **Debug Complex Issues:**
+
    ```python
    >>> # Check if variable exists
    >>> 'xResponse' in dir()
    False
-   
+
    >>> # Find similar names
    >>> [x for x in dir() if 'Response' in x]
    ['Response']
@@ -1216,6 +1344,7 @@ Click the screen icon (🖥️) on the error line to get an interactive Python s
 ## Best Practices
 
 ### 1. Environment-Specific Configuration
+
 ```bash
 # Development
 pserve development.ini --reload
@@ -1225,7 +1354,9 @@ pserve production.ini
 ```
 
 ### 2. Security
+
 ❌ **NEVER enable in production:**
+
 ```ini
 # production.ini - BAD!
 pyramid.includes =
@@ -1233,6 +1364,7 @@ pyramid.includes =
 ```
 
 ✅ **Only in development:**
+
 ```ini
 # development.ini - GOOD!
 pyramid.includes =
@@ -1240,7 +1372,9 @@ pyramid.includes =
 ```
 
 ### 3. Troubleshooting
+
 If toolbar causes issues:
+
 ```ini
 # Temporarily disable
 # pyramid.includes =
@@ -1248,6 +1382,7 @@ If toolbar causes issues:
 ```
 
 ### 4. Performance
+
 - Toolbar adds overhead
 - Not suitable for performance testing
 - Disable when benchmarking
@@ -1255,12 +1390,14 @@ If toolbar causes issues:
 ## Summary
 
 ### Pyramid Add-ons
+
 ✅ Extend Pyramid functionality
 ✅ Follow includeme() convention
 ✅ Configure via .ini or code
 ✅ Modular and reusable
 
 ### Debug Toolbar Benefits
+
 ✅ Rich error tracebacks
 ✅ Interactive debugger
 ✅ Request/response inspection
@@ -1268,6 +1405,7 @@ If toolbar causes issues:
 ✅ Easy to enable/disable
 
 ### Setuptools Extras
+
 ✅ Optional dependencies
 ✅ Environment-specific installs
 ✅ Smaller production deployments
@@ -1278,11 +1416,13 @@ If toolbar causes issues:
 # 05: Unit Tests and pytest Analysis
 
 ## Background Summary
+
 Testing is fundamental to software quality - "Untested code is broken code." Pyramid has maintained a commitment to testing with 100% test coverage from its earliest releases. While Python includes unittest in its standard library, the Pyramid community prefers pytest for its enhanced functionality and convenience. This tutorial introduces unit testing without being pedantic about test-driven development (TDD), focusing on practical testing to catch major issues during development.
 
 ## Key Components Analysis
 
 ### 1. Adding pytest as Development Dependency
+
 **Updated setup.py:**
 
 ```python
@@ -1313,22 +1453,26 @@ setup(
 ```
 
 **Why pytest in dev_requires:**
+
 - Testing is a development-time activity
 - Not needed in production deployments
 - Keeps production environment lean
 - Part of the development workflow
 
 **Installation Command:**
+
 ```bash
 $VENV/bin/pip install -e ".[dev]"
 ```
 
 This installs:
+
 - All `requires` packages (pyramid, waitress)
 - All `dev_requires` packages (pyramid_debugtoolbar, pytest)
 - The tutorial package in editable mode
 
 ### 2. Test File Structure (tutorial/tests.py)
+
 ```python
 import unittest
 from pyramid import testing
@@ -1351,12 +1495,14 @@ class TutorialViewTests(unittest.TestCase):
 **Code Breakdown:**
 
 **Imports:**
+
 ```python
 import unittest  # Python's standard testing framework
 from pyramid import testing  # Pyramid's testing helpers
 ```
 
 **Test Class:**
+
 ```python
 class TutorialViewTests(unittest.TestCase):
     # Inherits from unittest.TestCase
@@ -1365,26 +1511,31 @@ class TutorialViewTests(unittest.TestCase):
 ```
 
 **setUp Method:**
+
 ```python
 def setUp(self):
     self.config = testing.setUp()
 ```
+
 - Called before each test method
 - Creates fresh test configuration
 - Isolates tests from each other
 - `self.config` is a Configurator instance
 
 **tearDown Method:**
+
 ```python
 def tearDown(self):
     testing.tearDown()
 ```
+
 - Called after each test method
 - Cleans up test configuration
 - Ensures no state leaks between tests
 - Important for test isolation
 
 ### 3. The test_hello_world Test Method
+
 ```python
 def test_hello_world(self):
     from tutorial import hello_world
@@ -1397,9 +1548,11 @@ def test_hello_world(self):
 **Step-by-Step Analysis:**
 
 **1. Import Inside Test:**
+
 ```python
 from tutorial import hello_world
 ```
+
 - Why not at module level?
 - Avoids import side effects
 - Maintains test isolation
@@ -1407,50 +1560,60 @@ from tutorial import hello_world
 - Follows unit testing best practice
 
 **2. Create Mock Request:**
+
 ```python
 request = testing.DummyRequest()
 ```
+
 - DummyRequest is a fake HTTP request
 - Has all required request attributes
-- Lightweight - no real HTTP involved
 - Customizable for test scenarios
 
 **3. Call the View:**
+
 ```python
 response = hello_world(request)
 ```
+
 - Calls view function directly
 - No HTTP server needed
 - Fast execution
 - Returns Response object
 
 **4. Assert Expected Behavior:**
+
 ```python
 self.assertEqual(response.status_code, 200)
 ```
+
 - Verifies HTTP status code is 200 (OK)
 - Tests the "contract" of the view
 - Confirms view works as expected
 - Fails if view behavior changes
 
 ### 4. Running Tests with pytest
+
 **Command:**
+
 ```bash
 $VENV/bin/pytest tutorial/tests.py -q
 ```
 
 **Output:**
+
 ```
 .
 1 passed in 0.14 seconds
 ```
 
 **Command Flags:**
+
 - `pytest`: The test runner
 - `tutorial/tests.py`: Test file to run
 - `-q`: Quiet mode (less verbose output)
 
 **Output Explanation:**
+
 - `.`: One dot per passing test
 - `1 passed`: Number of successful tests
 - `in 0.14 seconds`: Execution time
@@ -1460,6 +1623,7 @@ $VENV/bin/pytest tutorial/tests.py -q
 **Why Use pytest?**
 
 **Feature Comparison:**
+
 ```python
 # unittest style
 class TestSomething(unittest.TestCase):
@@ -1472,6 +1636,7 @@ def test_example():
 ```
 
 **pytest Advantages:**
+
 - Runs unittest tests without modification
 - Simple assert statements (vs self.assertEqual)
 - Better test discovery
@@ -1482,6 +1647,7 @@ def test_example():
 - Less boilerplate code
 
 **Test Discovery:**
+
 ```bash
 # pytest finds tests automatically
 pytest                          # All tests in project
@@ -1491,6 +1657,7 @@ pytest -k hello                 # Tests matching pattern
 ```
 
 **Better Failure Output:**
+
 ```
 # unittest
 F
@@ -1513,17 +1680,20 @@ E       Actual: 404
 ## Pyramid Testing Helpers
 
 ### 1. testing.setUp()
+
 ```python
 config = testing.setUp()
 ```
 
 **What it does:**
+
 - Creates a new Configurator instance
 - Provides isolated test configuration
 - Allows adding test-specific routes/views
 - Returns the config object
 
 **Usage:**
+
 ```python
 def setUp(self):
     self.config = testing.setUp()
@@ -1532,34 +1702,40 @@ def setUp(self):
 ```
 
 ### 2. testing.tearDown()
+
 ```python
 testing.tearDown()
 ```
 
 **What it does:**
+
 - Cleans up configuration created by setUp()
 - Resets global Pyramid state
 - Ensures test isolation
 - Prevents test interference
 
 **Usage:**
+
 ```python
 def tearDown(self):
     testing.tearDown()
 ```
 
 ### 3. testing.DummyRequest()
+
 ```python
 request = testing.DummyRequest()
 ```
 
 **What it provides:**
+
 - Fake HTTP request object
 - Has all standard request attributes
 - Customizable for test scenarios
 - No web server required
 
 **Customization Examples:**
+
 ```python
 # Basic request
 request = testing.DummyRequest()
@@ -1582,6 +1758,7 @@ request.user = MockUser()
 ### 4. When setUp/tearDown Are Actually Needed
 
 **Current Example:**
+
 ```python
 def setUp(self):
     self.config = testing.setUp()  # Created but not used
@@ -1594,11 +1771,13 @@ def test_hello_world(self):
     from tutorial import hello_world
     request = testing.DummyRequest()
     response = hello_world(request)
+    self.assertEqual(response.status_code, 200)
 ```
 
 **Note from tutorial:** "Our use of pyramid.testing.setUp() and pyramid.testing.tearDown() aren't actually necessary here."
 
 **When They ARE Necessary:**
+
 ```python
 def setUp(self):
     self.config = testing.setUp()
@@ -1608,10 +1787,10 @@ def setUp(self):
 
 def test_view_needs_config(self):
     from tutorial import user_view
-    
+
     request = testing.DummyRequest()
     request.matched_route = DummyRoute('user', '/users/123')
-    
+
     # View uses config to look up settings or routes
     response = user_view(request)
     self.assertEqual(response.status_code, 200)
@@ -1620,6 +1799,7 @@ def test_view_needs_config(self):
 ## Unit Testing Principles
 
 ### 1. Test Isolation (Units)
+
 ```python
 from tutorial import hello_world  # ✅ Import inside test
 
@@ -1629,483 +1809,15 @@ from tutorial import hello_world  # ❌ Import at module level
 ```
 
 **Why import inside tests?**
+
 - Prevents import side effects from affecting other tests
 - Each test gets clean module state
-- Avoids hidden dependencies
-- True unit testing isolation
-
-**Example of Import Side Effects:**
-```python
-# module.py
-print("Module loaded!")  # Side effect
-counter = 0
-
-def increment():
-    global counter
-    counter += 1
-    return counter
-
-# If imported at module level:
-# - "Module loaded!" runs once
-# - counter is shared between tests
-# - Tests interfere with each other
-
-# If imported inside each test:
-# - Each test gets fresh module
-# - No shared state
-# - True isolation
-```
-
-### 2. Testing the Contract
-```python
-self.assertEqual(response.status_code, 200)
-```
-
-**What is a "contract"?**
-- The view promises to return HTTP 200 on success
-- The test verifies this promise
-- If view behavior changes, test catches it
-- Documents expected behavior
-
-**Example Contract Tests:**
-```python
-def test_hello_world(self):
-    # Contract: Returns 200 status
-    response = hello_world(request)
-    self.assertEqual(response.status_code, 200)
-    
-    # Contract: Returns HTML
-    self.assertIn('text/html', response.content_type)
-    
-    # Contract: Contains specific content
-    self.assertIn(b'Hello World', response.body)
-```
-
-### 3. Fast Feedback Loop
-
-**Traditional Development:**
-```
-1. Write code
-2. Switch to browser
-3. Refresh page
-4. Check if it works
-5. Switch back to editor
-6. Repeat
-```
-
-**With Tests:**
-```
-1. Write code
-2. Run pytest
-3. See results immediately
-4. Fix issues
-5. Repeat
-```
-
-**Benefits:**
-- No context switching
-- Faster iterations
-- Catch bugs immediately
-- No manual clicking
-- Automated verification
-
-## Running Tests - Various Options
-
-**Basic Commands:**
-```bash
-# Run all tests in file
-$VENV/bin/pytest tutorial/tests.py
-
-# Quiet mode (less output)
-$VENV/bin/pytest tutorial/tests.py -q
-
-# Verbose mode (more details)
-$VENV/bin/pytest tutorial/tests.py -v
-
-# Very verbose (shows all test names)
-$VENV/bin/pytest tutorial/tests.py -vv
-```
-
-**Discovery:**
-```bash
-# Run all tests in project
-$VENV/bin/pytest
-
-# Run tests in directory
-$VENV/bin/pytest tutorial/
-
-# Run specific test class
-$VENV/bin/pytest tutorial/tests.py::TutorialViewTests
-
-# Run specific test method
-$VENV/bin/pytest tutorial/tests.py::TutorialViewTests::test_hello_world
-```
-
-**Filtering:**
-```bash
-# Run tests matching pattern
-$VENV/bin/pytest -k hello
-
-# Run tests NOT matching pattern
-$VENV/bin/pytest -k "not slow"
-```
-
-**Output Control:**
-```bash
-# Show print statements
-$VENV/bin/pytest -s
-
-# Show local variables on failure
-$VENV/bin/pytest -l
-
-# Stop after first failure
-$VENV/bin/pytest -x
-
-# Stop after N failures
-$VENV/bin/pytest --maxfail=3
-```
-
-## Extra Credit Answers
-
-### 1. Change test to assert status 404 and read error report
-
-**Modified Test:**
-```python
-def test_hello_world(self):
-    from tutorial import hello_world
-    
-    request = testing.DummyRequest()
-    response = hello_world(request)
-    self.assertEqual(response.status_code, 404)  # Changed to 404
-```
-
-**Running pytest:**
-```bash
-$VENV/bin/pytest tutorial/tests.py -q
-```
-
-**Output:**
-```
-F
-======================================================================
-FAIL: test_hello_world (tutorial.tests.TutorialViewTests)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File ".../tutorial/tests.py", line 14, in test_hello_world
-    self.assertEqual(response.status_code, 404)
-AssertionError: 200 != 404
-
-----------------------------------------------------------------------
-Ran 1 test in 0.02s
-
-FAILED (failures=1)
-```
-
-**Understanding the Output:**
-- `F`: Test failed (instead of `.`)
-- `FAIL: test_hello_world`: Which test failed
-- `Traceback`: Shows exactly where it failed
-- `AssertionError: 200 != 404`: Expected 404, got 200
-- **Key insight**: Test correctly caught that our view returns 200, not 404
-
-**What It Tells Us:**
-- Test location: `tutorial/tests.py`, line 14
-- What was tested: `response.status_code`
-- Expected value: 404
-- Actual value: 200
-- The test works! It caught the mismatch
-
-### 2. Introduce error in view and see convenience
-
-**Buggy View Code:**
-```python
-def hello_world(request):
-    undefined_variable = some_nonexistent_var  # ❌ Error
-    return Response('<body><h1>Hello World!</h1></body>')
-```
-
-**Run Tests:**
-```bash
-$VENV/bin/pytest tutorial/tests.py -q
-```
-
-**Output:**
-```
-E
-======================================================================
-ERROR: test_hello_world (tutorial.tests.TutorialViewTests)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File ".../tutorial/tests.py", line 13, in test_hello_world
-    response = hello_world(request)
-  File ".../tutorial/__init__.py", line 6, in hello_world
-    undefined_variable = some_nonexistent_var
-NameError: name 'some_nonexistent_var' is not defined
-
-----------------------------------------------------------------------
-Ran 1 test in 0.02s
-
-FAILED (errors=1)
-```
-
-**Convenience Benefits:**
-- ✅ **Immediate feedback**: See error instantly, no browser needed
-- ✅ **Clear traceback**: Shows exact line causing error
-- ✅ **Fast iteration**: Fix and re-run in seconds
-- ✅ **No manual testing**: Automated check every time
-- ✅ **Regression prevention**: Error won't sneak back in
-
-**Comparison to Manual Testing:**
-
-**Manual Testing:**
-```
-1. Save code
-2. Switch to browser
-3. Refresh page
-4. See error (maybe)
-5. Switch back to code
-6. Find the line
-7. Fix it
-8. Repeat
-Time: ~30-60 seconds per iteration
-```
-
-**Automated Testing:**
-```
-1. Run pytest
-2. See exact error location
-3. Fix it
-4. Run pytest again
-Time: ~5-10 seconds per iteration
-```
-
-### 3. Test Response code change
-
-**Understanding Response Objects:**
-```python
-from pyramid.response import Response
-
-# Default status is 200
-response = Response('Hello')
-response.status_code  # 200
-
-# Can set different status codes
-response = Response('Not Found', status=404)
-response.status_code  # 404
-
-# Or modify after creation
-response = Response('Hello')
-response.status_code = 201  # Created
-response.status = '201 Created'  # Alternative way
-```
-
-**Modified View:**
-```python
-def hello_world(request):
-    response = Response('<body><h1>Hello World!</h1></body>')
-    response.status_code = 404  # Change status to 404
-    return response
-```
-
-**Run Original Test:**
-```bash
-$VENV/bin/pytest tutorial/tests.py -q
-```
-
-**Output:**
-```
-F
-AssertionError: 404 != 200
-```
-
-**Contract Broken:**
-- Original contract: View returns 200 (success)
-- New behavior: View returns 404 (not found)
-- Test correctly fails
-- This is the test doing its job!
-
-**Fix the Test to Match New Contract:**
-```python
-def test_hello_world(self):
-    from tutorial import hello_world
-    
-    request = testing.DummyRequest()
-    response = hello_world(request)
-    self.assertEqual(response.status_code, 404)  # Updated expectation
-```
-
-**Now Test Passes:**
-```bash
-$VENV/bin/pytest tutorial/tests.py -q
-```
-```
-.
-1 passed in 0.02s
-```
-
-**Key Lesson:**
-- Tests document expected behavior (the "contract")
-- When behavior changes intentionally, update tests
-- When behavior changes unintentionally, tests catch bugs
-- Tests are living documentation of your code
-
-### 4. How to test HTML response body?
-
-**Multiple Approaches:**
-
-**Approach 1: Test Response Body (bytes):**
-```python
-def test_hello_world_body(self):
-    from tutorial import hello_world
-    
-    request = testing.DummyRequest()
-    response = hello_world(request)
-    
-    # response.body is bytes
-    self.assertIn(b'<h1>Hello World!</h1>', response.body)
-    self.assertIn(b'<body>', response.body)
-```
-
-**Approach 2: Test Response Text (string):**
-```python
-def test_hello_world_text(self):
-    from tutorial import hello_world
-    
-    request = testing.DummyRequest()
-    response = hello_world(request)
-    
-    # response.text is string
-    self.assertIn('Hello World!', response.text)
-    self.assertIn('<h1>', response.text)
-```
-
-**Approach 3: More Specific Assertions:**
-```python
-def test_hello_world_content(self):
-    from tutorial import hello_world
-    
-    request = testing.DummyRequest()
-    response = hello_world(request)
-    
-    # Test status
-    self.assertEqual(response.status_code, 200)
-    
-    # Test content type
-    self.assertIn('text/html', response.content_type)
-    
-    # Test specific content
-    self.assertIn(b'Hello World!', response.body)
-    
-    # Test HTML structure
-    self.assertTrue(response.body.startswith(b'<body>'))
-    self.assertTrue(response.body.endswith(b'</body>'))
-```
-
-**Approach 4: Using lxml for HTML Parsing (advanced):**
-```python
-def test_hello_world_html_structure(self):
-    from tutorial import hello_world
-    from lxml import html
-    
-    request = testing.DummyRequest()
-    response = hello_world(request)
-    
-    # Parse HTML
-    tree = html.fromstring(response.body)
-    
-    # Test using XPath or CSS selectors
-    h1_elements = tree.xpath('//h1')
-    self.assertEqual(len(h1_elements), 1)
-    self.assertEqual(h1_elements[0].text, 'Hello World!')
-```
-
-**Approach 5: Using WebTest (functional testing):**
-```python
-from webtest import TestApp
-
-def test_hello_world_functional(self):
-    from tutorial import main
-    
-    app = TestApp(main({}, **settings))
-    response = app.get('/', status=200)
-    
-    # WebTest provides convenient methods
-    response.mustcontain('Hello World!')
-    response.mustcontain('<h1>', '</h1>')
-```
-
-**Best Practices for Testing HTML:**
-- ✅ Test semantic content, not exact HTML
-- ✅ Test that important elements exist
-- ✅ Don't test whitespace or formatting
-- ✅ Use contains checks rather than equality
-- ✅ Consider CSS selectors for complex pages
-
-**Example - Good vs Bad:**
-```python
-# ❌ BAD: Too brittle
-expected = '<body><h1>Hello World!</h1></body>'
-self.assertEqual(response.body.decode(), expected)
-# Breaks if you add whitespace, classes, etc.
-
-# ✅ GOOD: Tests what matters
-self.assertIn('Hello World!', response.text)
-self.assertEqual(response.status_code, 200)
-# Focuses on content and behavior, not exact formatting
-```
-
-### 5. Why import view inside test method?
-
-**Detailed Explanation:**
-
-**The Problem with Top-Level Imports:**
-```python
-# tests.py - BAD PRACTICE
-from tutorial import hello_world  # ← Import at module level
-
-class TutorialViewTests(unittest.TestCase):
-    def test_hello_world(self):
-        request = testing.DummyRequest()
-        response = hello_world(request)  # Uses already-imported function
-        self.assertEqual(response.status_code, 200)
-    
-    def test_hello_world_again(self):
-        # Still using the SAME imported function
-        # If first test modified module state, this test sees it
-        pass
-```
-
-**Issues:**
-- Module imported once when tests.py loads
-- All tests share the same module instance
 - Module-level code runs only once
 - State can leak between tests
 - Import side effects affect all tests
 
-**The Solution - Import Inside Tests:**
-```python
-# tests.py - GOOD PRACTICE
-class TutorialViewTests(unittest.TestCase):
-    def test_hello_world(self):
-        from tutorial import hello_world  # ← Fresh import
-        request = testing.DummyRequest()
-        response = hello_world(request)
-        self.assertEqual(response.status_code, 200)
-    
-    def test_hello_world_again(self):
-        from tutorial import hello_world  # ← Another fresh import
-        # Gets clean module state
-        pass
-```
-
-**Benefits:**
-- Each test can get fresh module
-- Reduces coupling between tests
-- Prevents state leakage
-- True unit test isolation
-- Easier to test import errors
-
 **Real-World Example:**
+
 ```python
 # tutorial/__init__.py
 import os
@@ -2147,12 +1859,14 @@ class TestCase2(unittest.TestCase):
 ```
 
 **Performance Note:**
+
 - Python caches imports in `sys.modules`
 - Subsequent imports from cache are fast
 - The performance hit is negligible
 - Test isolation is worth it
 
 **When Top-Level Import is OK:**
+
 ```python
 # Testing utilities, not application code
 import unittest
@@ -2168,9 +1882,10 @@ class Tests(unittest.TestCase):
         from tutorial import my_view  # ✅ Application code, import inside
 ```
 
-## Best Practices Summary
+## Summary
 
 ### Testing Guidelines:
+
 - ✅ Write tests as you develop
 - ✅ Test the contract (expected behavior)
 - ✅ Keep tests fast and isolated
@@ -2180,6 +1895,7 @@ class Tests(unittest.TestCase):
 - ✅ Test both success and failure cases
 
 ### Test Organization:
+
 ```
 tutorial/
 ├── __init__.py
@@ -2191,6 +1907,7 @@ tutorial/
 ```
 
 ### Running Tests in Development:
+
 ```bash
 # Quick check during development
 pytest tutorial/tests.py -q
@@ -2205,43 +1922,149 @@ ptw tutorial/
 pytest --junitxml=report.xml
 ```
 
-## Summary
+## Analysis: Unit vs. Functional Test
 
-### Unit Testing with pytest
-✅ Provides immediate feedback on code changes
-✅ Catches bugs before manual testing
-✅ Documents expected behavior
-✅ Enables confident refactoring
-✅ Faster than manual browser testing
+It's crucial to understand the difference between the two tests we now have in the same file:
 
-### Pyramid Testing Helpers
-✅ `testing.setUp()`: Creates test configuration
-✅ `testing.tearDown()`: Cleans up after tests
-✅ `testing.DummyRequest()`: Creates mock requests
-✅ Enables testing without web server
-✅ Fast, isolated unit tests
+| Feature             | **Unit Test (Step 5)**                                        | **Functional Test (Step 6)**                                                |
+| :------------------ | :------------------------------------------------------------ | :-------------------------------------------------------------------------- |
+| **What is Tested?** | The `hello_world` function in **isolation**.                  | The **entire application stack** (Routing -> View -> Response).             |
+| **How?**            | Calling the Python function directly: `hello_world(request)`. | Simulating an HTTP request: `self.testapp.get('/')`.                        |
+| **Request**         | Uses `testing.DummyRequest()`, a fake object.                 | Uses `TestApp` to create a simulated, real HTTP request.                    |
+| **Routing**         | ❌ **Not tested.** We call the view directly.                 | ✅ **Is tested.** The app must map the `/` route to the `hello_world` view. |
+| **Templates**       | ❌ **Not tested.** (Though our view doesn't use one yet).     | ✅ **Is tested.** This test checks the final HTML output.                   |
+| **Speed**           | Extremely Fast                                                | Fast (but slightly slower than a unit test)                                 |
 
-### pytest Advantages
-✅ Runs unittest-style tests
-✅ Simple assert statements
-✅ Better failure output
-✅ Rich plugin ecosystem
-✅ Less boilerplate than unittest
-✅ Industry standard for Python testing
+**Conclusion:** Our unit test ensures the `hello_world` function returns a 200 status. Our functional test ensures that **a user visiting the `/` route in their browser will actually see the HTML `<h1>Hello World!</h1>`**.
 
 ---
 
 # 06: Functional Testing Analysis
 
-(Coming Soon)
+## Background Summary
+
+Unit tests (like in step 5) are excellent for testing individual functions in isolation. However, unit tests **do not verify** if all the application components (like routing, views, and templates) are wired together and working correctly.
+
+**Functional testing** bridges this gap. We use the **WebTest** library to simulate HTTP requests (like GET or POST) against our entire WSGI application. WebTest runs the full application stack—from routing through view execution and response rendering—but does it in-memory **without needing to run an actual HTTP server**. This makes it incredibly fast, fast enough to be run alongside our unit tests.
 
 ## Key Components Analysis
 
-### 1. Test Scenarios
-(To be filled)
+### 1. Dependency Update (setup.py)
 
-### 2. Integration Testing
-(To be filled)
+We add `webtest` as a development dependency. This is logical because, like `pytest`, WebTest is only needed during development and testing, not in a production environment.
+
+**setup.py:**
+
+```python
+# ... (requires list remains the same)
+
+# List of dependencies installed via `pip install -e ".[dev]"`
+dev_requires = [
+    'pyramid_debugtoolbar',
+    'pytest',
+    'webtest',  # <-- Added
+]
+
+setup(
+    name='tutorial',
+    install_requires=requires,
+    extras_require={
+        'dev': dev_requires,  # <-- 'dev' extra now includes webtest
+    },
+    # ... (entry_points remains the same)
+)
+```
+
+After updating this file, we run `$VENV/bin/pip install -e ".[dev]"` to install the new `webtest` package.
+
+### 2. Test File Update (tutorial/tests.py)
+
+We **add a new test class** to our existing `tutorial/tests.py` file. This file now contains _both_ types of tests: unit and functional.
+
+```python
+import unittest
+from pyramid import testing
+
+# === UNIT TEST CLASS (FROM STEP 5) ===
+class TutorialViewTests(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+
+    def tearDown(self):
+        testing.tearDown()
+
+    def test_hello_world(self):
+        from tutorial import hello_world
+
+        request = testing.DummyRequest()
+        response = hello_world(request)
+        self.assertEqual(response.status_code, 200)
+
+# === NEW FUNCTIONAL TEST CLASS (STEP 6) ===
+class TutorialFunctionalTests(unittest.TestCase):
+    def setUp(self):
+        from tutorial import main  # 1. Import the application factory
+        app = main({})             # 2. Create a WSGI application instance
+        from webtest import TestApp
+        self.testapp = TestApp(app) # 3. Wrap the application with TestApp
+
+    def test_hello_world(self):
+        # 4. Make a GET request to '/'
+        res = self.testapp.get('/', status=200)
+        # 5. Check that the response body contains the expected HTML
+        self.assertIn(b'<h1>Hello World!</h1>', res.body)
+```
+
+### 3. Analysis of the Functional `setUp` Method
+
+This `setUp` method is very different from the unit test's:
+
+1.  `from tutorial import main`: Imports our **`main` factory** from `__init__.py`.
+2.  `app = main({})`: Executes the factory to get the **actual WSGI application object**. This is our complete app, with all its configuration, routes, and views.
+3.  `self.testapp = TestApp(app)`: This is the core of WebTest. We wrap our WSGI application inside `TestApp`, which gives us a "remote control" (`self.testapp`) to send fake HTTP requests to it.
+
+### 4. Analysis of the Functional `test_hello_world` Method
+
+1.  `res = self.testapp.get('/', status=200)`: This is the request simulation.
+    - `self.testapp.get('/')`: Simulates a browser making an **HTTP GET** to the root path (`/`).
+    - `status=200`: This is a built-in _assertion_ from WebTest. The test will **fail immediately** if the response status is _not_ 200 (OK).
+    - `res`: The `res` variable now holds the returned response object.
+2.  `self.assertIn(b'<h1>Hello World!</h1>', res.body)`: This is our main test.
+    - `res.body`: This is the **raw content** of the HTTP response.
+    - `b'...'`: The `b` prefix signifies a **byte string**. (See Extra Credit).
+    - `self.assertIn(...)`: We assert that the HTML text `<h1>Hello World!</h1>` (as bytes) is contained within the response body.
+
+## Analysis: Unit vs. Functional Test
+
+It's crucial to understand the difference between the two tests we now have in the same file:
+
+| Feature             | **Unit Test (Step 5)**                                        | **Functional Test (Step 6)**                                                |
+| :------------------ | :------------------------------------------------------------ | :-------------------------------------------------------------------------- |
+| **What is Tested?** | The `hello_world` function in **isolation**.                  | The **entire application stack** (Routing -> View -> Response).             |
+| **How?**            | Calling the Python function directly: `hello_world(request)`. | Simulating an HTTP request: `self.testapp.get('/')`.                        |
+| **Request**         | Uses `testing.DummyRequest()`, a fake object.                 | Uses `TestApp` to create a simulated, real HTTP request.                    |
+| **Routing**         | ❌ **Not tested.** We call the view directly.                 | ✅ **Is tested.** The app must map the `/` route to the `hello_world` view. |
+| **Templates**       | ❌ **Not tested.** (Though our view doesn't use one yet).     | ✅ **Is tested.** This test checks the final HTML output.                   |
+| **Speed**           | Extremely Fast                                                | Fast (but slightly slower than a unit test)                                 |
+
+**Conclusion:** Our unit test ensures the `hello_world` function returns a 200 status. Our functional test ensures that **a user visiting the `/` route in their browser will actually see the HTML `<h1>Hello World!</h1>`**.
+
+## Extra Credit Answers
+
+### 1. Why do our functional tests use `b''`?
+
+The short answer: **Because HTTP responses are fundamentally bytes, not text.**
+
+1.  **HTTP is a Byte Protocol:** When a web server sends an HTML page, it sends a raw stream of **bytes**. The `Content-Type` header (e.g., `text/html; charset=utf-8`) tells the browser how to _interpret_ those bytes into text (Unicode).
+2.  **`res.body` vs. `res.text`:**
+    - `res.body` (which we used) gives us the **raw bytes** as they were sent.
+    - `res.text` (which we _could_ have used) would give us the **string** (Unicode) version after WebTest reads the headers and decodes it for us.
+3.  **Type Comparison:** In Python 3, you cannot compare `bytes` (from `res.body`) with a `str` (like `'<h1>...'`). Doing so will cause a `TypeError`.
+    - ❌ `self.assertIn('<h1>...</h1>', res.body)` -> **Error!** (comparing str to bytes)
+    - ✅ `self.assertIn(b'<h1>...</h1>', res.body)` -> **Correct!** (comparing bytes to bytes)
+    - ✅ `self.assertIn('<h1>...</h1>', res.text)` -> **Correct!** (comparing str to str)
+
+Using `b''` and `res.body` is good practice because it tests the rawest output of our application, before any decoding.
 
 ---
 
@@ -2252,9 +2075,11 @@ pytest --junitxml=report.xml
 ## Key Components Analysis
 
 ### 1. Request Handling
+
 (To be filled)
 
 ### 2. Response Generation
+
 (To be filled)
 
 ---
@@ -2266,9 +2091,11 @@ pytest --junitxml=report.xml
 ## Key Components Analysis
 
 ### 1. Template Engines
+
 (To be filled)
 
 ### 2. HTML Rendering
+
 (To be filled)
 
 ---
@@ -2280,9 +2107,11 @@ pytest --junitxml=report.xml
 ## Key Components Analysis
 
 ### 1. Class-Based Views
+
 (To be filled)
 
 ### 2. View Methods
+
 (To be filled)
 
 ---
@@ -2294,9 +2123,11 @@ pytest --junitxml=report.xml
 ## Key Components Analysis
 
 ### 1. Request Object
+
 (To be filled)
 
 ### 2. Response Object
+
 (To be filled)
 
 ---
@@ -2308,9 +2139,11 @@ pytest --junitxml=report.xml
 ## Key Components Analysis
 
 ### 1. Route Configuration
+
 (To be filled)
 
 ### 2. URL Patterns
+
 (To be filled)
 
 ---
@@ -2322,9 +2155,11 @@ pytest --junitxml=report.xml
 ## Key Components Analysis
 
 ### 1. Jinja2 Syntax
+
 (To be filled)
 
 ### 2. Template Inheritance
+
 (To be filled)
 
 ---
@@ -2336,9 +2171,11 @@ pytest --junitxml=report.xml
 ## Key Components Analysis
 
 ### 1. Asset Management
+
 (To be filled)
 
 ### 2. Static File Serving
+
 (To be filled)
 
 ---
@@ -2350,9 +2187,11 @@ pytest --junitxml=report.xml
 ## Key Components Analysis
 
 ### 1. AJAX Requests
+
 (To be filled)
 
 ### 2. JSON Responses
+
 (To be filled)
 
 ---
@@ -2364,9 +2203,11 @@ pytest --junitxml=report.xml
 ## Key Components Analysis
 
 ### 1. Advanced Patterns
+
 (To be filled)
 
 ### 2. View Decorators
+
 (To be filled)
 
 ---
@@ -2378,9 +2219,11 @@ pytest --junitxml=report.xml
 ## Key Components Analysis
 
 ### 1. Logging Configuration
+
 (To be filled)
 
 ### 2. Log Levels
+
 (To be filled)
 
 ---
@@ -2392,9 +2235,11 @@ pytest --junitxml=report.xml
 ## Key Components Analysis
 
 ### 1. Session Management
+
 (To be filled)
 
 ### 2. Session Storage
+
 (To be filled)
 
 ---
@@ -2406,9 +2251,11 @@ pytest --junitxml=report.xml
 ## Key Components Analysis
 
 ### 1. Form Handling
+
 (To be filled)
 
 ### 2. Validation Rules
+
 (To be filled)
 
 ---
@@ -2420,9 +2267,11 @@ pytest --junitxml=report.xml
 ## Key Components Analysis
 
 ### 1. Database Models
+
 (To be filled)
 
 ### 2. ORM Operations
+
 (To be filled)
 
 ---
@@ -2434,9 +2283,11 @@ pytest --junitxml=report.xml
 ## Key Components Analysis
 
 ### 1. Authentication Setup
+
 (To be filled)
 
 ### 2. User Management
+
 (To be filled)
 
 ---
@@ -2448,7 +2299,9 @@ pytest --junitxml=report.xml
 ## Key Components Analysis
 
 ### 1. Permission System
+
 (To be filled)
 
 ### 2. Access Control
+
 (To be filled)
